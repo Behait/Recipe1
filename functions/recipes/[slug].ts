@@ -23,7 +23,7 @@ export const onRequestGet = async ({ params, env, request }: any) => {
     const url = new URL(request.url);
     const title = `${escapeHtml(recipe.recipe_name)} | 菜谱详情`;
     const description = escapeHtml(recipe.description || "");
-    const img = recipe.image_url ? `<img src="${escapeHtml(recipe.image_url)}" alt="${escapeHtml(recipe.recipe_name)}" loading="eager"/>` : "";
+    const img = recipe.image_url ? `<img class=\"w-full h-full object-cover\" src=\"${escapeHtml(recipe.image_url)}\" alt=\"${escapeHtml(recipe.recipe_name)}\" loading=\"eager\"/>` : "";
 
     const ingredientsHtml = (recipe.ingredients || [])
       .map((i: string) => `<li>${escapeHtml(i)}</li>`)?.join("\n") || "";
@@ -63,42 +63,34 @@ export const onRequestGet = async ({ params, env, request }: any) => {
   <meta property="og:description" content="${description}" />
   <meta property="og:type" content="article" />
   <meta property="og:url" content="${escapeHtml(url.origin + "/recipes/" + slug)}" />
-  ${recipe.image_url ? `<meta property="og:image" content="${escapeHtml(recipe.image_url)}" />` : ""}
+  ${recipe.image_url ? `<meta property=\"og:image\" content=\"${escapeHtml(recipe.image_url)}\" />` : ""}
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${escapeHtml(recipe.recipe_name)}" />
   <meta name="twitter:description" content="${description}" />
-  ${recipe.image_url ? `<meta name="twitter:image" content="${escapeHtml(recipe.image_url)}" />` : ""}
+  ${recipe.image_url ? `<meta name=\"twitter:image\" content=\"${escapeHtml(recipe.image_url)}\" />` : ""}
   <script type="application/ld+json">${escapeHtml(JSON.stringify(jsonLd))}</script>
   <script type="application/ld+json">${escapeHtml(JSON.stringify(breadcrumbLd))}</script>
-  <style>
-    body{font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin:0;}
-    header{padding:16px 24px; border-bottom:1px solid #eee;}
-    main{max-width:840px; margin:0 auto; padding:16px;}
-    figure{margin:0 0 16px 0}
-    img{width:100%; height:auto; border-radius:8px;}
-    h1{margin:12px 0}
-    .meta{color:#666}
-    .grid{display:grid; grid-template-columns:1fr 1fr; gap:16px}
-    ul{padding-left:18px}
-  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <header>
-    <a href="/recipes/">← 返回列表</a>
-    <h1>${escapeHtml(recipe.recipe_name)}</h1>
-    <p class="meta">准备时间：${escapeHtml(recipe.prep_time)} ｜ 烹饪时间：${escapeHtml(recipe.cook_time)}</p>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100">
+  <header class="bg-white dark:bg-slate-800 shadow-md sticky top-0">
+    <div class="max-w-3xl mx-auto px-4 py-3">
+      <a class="text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600" href="/recipes/">← 返回列表</a>
+      <h1 class="text-2xl font-bold mt-2">${escapeHtml(recipe.recipe_name)}</h1>
+      <p class="text-sm text-slate-600 dark:text-slate-400">准备时间：${escapeHtml(recipe.prep_time)} ｜ 烹饪时间：${escapeHtml(recipe.cook_time)}</p>
+    </div>
   </header>
-  <main>
-    <figure>${img}</figure>
-    <p>${description}</p>
-    <section class="grid">
+  <main class="max-w-3xl mx-auto px-4 py-6 space-y-6">
+    <figure class="aspect-video w-full overflow-hidden rounded-lg bg-slate-100">${img}</figure>
+    <p class="text-slate-700 dark:text-slate-300">${description}</p>
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
-        <h2>食材</h2>
-        <ul>${ingredientsHtml}</ul>
+        <h2 class="text-xl font-semibold">食材</h2>
+        <ul class="list-disc pl-6 space-y-1">${ingredientsHtml}</ul>
       </div>
       <div>
-        <h2>步骤</h2>
-        <ol>${instructionsHtml}</ol>
+        <h2 class="text-xl font-semibold">步骤</h2>
+        <ol class="list-decimal pl-6 space-y-2">${instructionsHtml}</ol>
       </div>
     </section>
   </main>

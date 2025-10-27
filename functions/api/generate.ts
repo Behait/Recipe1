@@ -43,7 +43,7 @@ type PagesFunction<Env = unknown> = (context: {
 }) => Promise<Response> | Response;
 
 // Cloudflare Function handler
-export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string }> = async ({ request, env }) => {
+export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string, DB_CONNECTION_STRING: string }> = async ({ request, env }) => {
   if (!env.GEMINI_API_KEY) {
     return new Response(JSON.stringify({ error: "API key is not configured on the server." }), { 
         status: 500,
@@ -55,12 +55,10 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string }> = async ({
     const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
     const { type, payload } = await request.json();
 
-    let geminiResponse;
-
     switch (type) {
       case 'generateOptions': {
         const prompt = `根据以下食材，推荐3个有创意的菜谱。请只提供菜谱的中文名称。食材：${payload.ingredients}`;
-        geminiResponse = await ai.models.generateContent({
+        const geminiResponse = await ai.models.generateContent({
           model: "gemini-2.5-flash",
           contents: prompt,
           config: {
@@ -69,7 +67,7 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string }> = async ({
             temperature: 0.8,
           }
         });
-        break;
+        return new Response(geminiResponse.text, { headers: { 'Content-Type': 'application/json' } });
       }
       case 'generateDetails': {
         const prompt = `为“${payload.recipeName}”生成一份详细的菜谱，使用以下部分食材：${payload.ingredients}。可以随意添加常见的厨房常备品。菜谱应包含：1. 简短诱人的描述。2. 准备时间（例如，“15分钟”）。3. 烹饪时间（例如，“25分钟”）。4. 包含所有必要食材及其用量的列表。5. 详细的制作步骤。请以中文JSON格式提供输出。`;
@@ -84,28 +82,41 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string }> = async ({
         });
         const details = JSON.parse(detailsResp.text || '{}');
 
-        // 生成图片并上传到 R2
+        // 先持久化至数据库（无图），避免因为图片失败而不入库
+        const conn = (env as any).DB_CONNECTION_STRING;
+        let up: { id: string; slug: string } | null = null;
         let imageUrl: string = '';
         let imageKey: string | null = null;
-        try {
-          const imageResp = await ai.models.generateImages({
-            model: 'imagen-4.0-generate-001',
-            prompt: `A professional, delicious photo of ${details.recipeName}, beautifully plated`,
-            config: { numberOfImages: 1, outputMimeType: 'image/png', aspectRatio: '16:9' },
-          });
-          if (imageResp.generatedImages && imageResp.generatedImages.length > 0) {
-            const base64ImageBytes = imageResp.generatedImages[0].image.imageBytes;
-            const slug = toSlug(details.recipeName);
-            const uploaded = await uploadImage(env, base64ImageBytes, slug);
-            imageUrl = uploaded.image_url;
-            imageKey = uploaded.image_key;
-
-            // 写入数据库
+        const slug = toSlug(details.recipeName);
+        if (conn) {
+          try {
+            const sql = getSql(conn);
+            up = await upsertRecipe(sql, {
+              slug,
+              recipeName: details.recipeName,
+              description: details.description,
+              prepTime: details.prepTime,
+              cookTime: details.cookTime,
+              ingredients: details.ingredients,
+              instructions: details.instructions,
+              image_key: null,
+              image_url: null,
+              source: 'user',
+            });
+            await logGeneration(sql, payload.ingredients ?? '', up.id);
+            // 生成图片并上传到 R2（成功则更新图片字段）
             try {
-              const conn = (env as any).DB_CONNECTION_STRING;
-              if (conn) {
-                const sql = getSql(conn);
-                const up = await upsertRecipe(sql, {
+              const imageResp = await ai.models.generateImages({
+                model: 'imagen-4.0-generate-001',
+                prompt: `A professional, delicious photo of ${details.recipeName}, beautifully plated`,
+                config: { numberOfImages: 1, outputMimeType: 'image/png', aspectRatio: '16:9' },
+              });
+              if (imageResp.generatedImages && imageResp.generatedImages.length > 0) {
+                const base64ImageBytes = imageResp.generatedImages[0].image.imageBytes;
+                const uploaded = await uploadImage(env, base64ImageBytes, slug);
+                imageUrl = uploaded.image_url;
+                imageKey = uploaded.image_key;
+                await upsertRecipe(sql, {
                   slug,
                   recipeName: details.recipeName,
                   description: details.description,
@@ -117,18 +128,20 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string }> = async ({
                   image_url: imageUrl,
                   source: 'user',
                 });
-                await logGeneration(sql, payload.ingredients ?? '', up.id);
               }
             } catch (e) {
-              console.error('DB persist error (generateDetails):', e);
+              console.error('Image generation/upload failed (generateDetails):', e);
             }
+          } catch (e) {
+            console.error('DB persist error (generateDetails):', e);
           }
-        } catch (e) {
-          console.error('Image generation/upload failed:', e);
+        } else {
+          console.error('DB_CONNECTION_STRING is not configured for generateDetails');
         }
 
         const finalRecipe = {
-          id: '',
+          id: up?.id || '',
+          slug: up?.slug || slug,
           recipeName: details.recipeName,
           description: details.description,
           prepTime: details.prepTime,
@@ -137,8 +150,7 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string }> = async ({
           instructions: details.instructions,
           imageUrl: imageUrl,
         };
-        geminiResponse = { text: JSON.stringify(finalRecipe) } as any;
-        break;
+        return new Response(JSON.stringify(finalRecipe), { headers: { 'Content-Type': 'application/json' } });
       }
       case 'generateRotd': {
         const prompt = `为“今日推荐”生成一个有创意且受欢迎的菜谱。该菜谱应能吸引广大受众，使用相对常见的食材，并适合作为工作日晚餐。菜谱应包含：1. 简短诱人的描述。2. 准备时间（例如，“15分钟”）。3. 烹饪时间（例如，“25分钟”）。4. 包含所有必要食材及其用量的列表。5. 详细的制作步骤。请以中文JSON格式提供输出。`;
@@ -153,26 +165,42 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string }> = async ({
         });
         const details = JSON.parse(detailsResp.text || '{}');
 
+        const conn = (env as any).DB_CONNECTION_STRING;
+        let up: { id: string; slug: string } | null = null;
         let imageUrl: string = '';
         let imageKey: string | null = null;
-        try {
-          const imageResp = await ai.models.generateImages({
-            model: 'imagen-4.0-generate-001',
-            prompt: `A professional, delicious photo of ${details.recipeName}, beautifully plated`,
-            config: { numberOfImages: 1, outputMimeType: 'image/png', aspectRatio: '16:9' },
-          });
-          if (imageResp.generatedImages && imageResp.generatedImages.length > 0) {
-            const base64ImageBytes = imageResp.generatedImages[0].image.imageBytes;
-            const slug = toSlug(details.recipeName);
-            const uploaded = await uploadImage(env, base64ImageBytes, slug);
-            imageUrl = uploaded.image_url;
-            imageKey = uploaded.image_key;
-
+        const slug = toSlug(details.recipeName);
+        if (conn) {
+          try {
+            const sql = getSql(conn);
+            // 先入库为 daily 来源
+            up = await upsertRecipe(sql, {
+              slug,
+              recipeName: details.recipeName,
+              description: details.description,
+              prepTime: details.prepTime,
+              cookTime: details.cookTime,
+              ingredients: details.ingredients,
+              instructions: details.instructions,
+              image_key: null,
+              image_url: null,
+              source: 'daily',
+            });
+            const today = new Date().toISOString().slice(0, 10);
+            await setDailyRecommendation(sql, today, up.id);
+            // 图片生成与更新
             try {
-              const conn = (env as any).DB_CONNECTION_STRING;
-              if (conn) {
-                const sql = getSql(conn);
-                const up = await upsertRecipe(sql, {
+              const imageResp = await ai.models.generateImages({
+                model: 'imagen-4.0-generate-001',
+                prompt: `A professional, delicious photo of ${details.recipeName}, beautifully plated`,
+                config: { numberOfImages: 1, outputMimeType: 'image/png', aspectRatio: '16:9' },
+              });
+              if (imageResp.generatedImages && imageResp.generatedImages.length > 0) {
+                const base64ImageBytes = imageResp.generatedImages[0].image.imageBytes;
+                const uploaded = await uploadImage(env, base64ImageBytes, slug);
+                imageUrl = uploaded.image_url;
+                imageKey = uploaded.image_key;
+                await upsertRecipe(sql, {
                   slug,
                   recipeName: details.recipeName,
                   description: details.description,
@@ -184,19 +212,20 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string }> = async ({
                   image_url: imageUrl,
                   source: 'daily',
                 });
-                const today = new Date().toISOString().slice(0, 10);
-                await setDailyRecommendation(sql, today, up.id);
               }
             } catch (e) {
-              console.error('DB persist error (generateRotd):', e);
+              console.error('Image generation/upload failed (generateRotd):', e);
             }
+          } catch (e) {
+            console.error('DB persist error (generateRotd):', e);
           }
-        } catch (e) {
-          console.error('Image generation/upload failed:', e);
+        } else {
+          console.error('DB_CONNECTION_STRING is not configured for generateRotd');
         }
 
         const finalRecipe = {
-          id: '',
+          id: up?.id || '',
+          slug: up?.slug || slug,
           recipeName: details.recipeName,
           description: details.description,
           prepTime: details.prepTime,
@@ -205,8 +234,7 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string }> = async ({
           instructions: details.instructions,
           imageUrl: imageUrl,
         };
-        geminiResponse = { text: JSON.stringify(finalRecipe) } as any;
-        break;
+        return new Response(JSON.stringify(finalRecipe), { headers: { 'Content-Type': 'application/json' } });
       }
       case 'generateImage': {
         const prompt = `A professional, delicious, mouth-watering photo of ${payload.recipeName}, beautifully plated on a clean background, vibrant colors, appetizing, high-resolution food photography.`;
@@ -238,12 +266,7 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string }> = async ({
             headers: { 'Content-Type': 'application/json' }
         });
     }
-
-    return new Response(geminiResponse.text, { 
-        headers: { 'Content-Type': 'application/json' }
-    });
-
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in Cloudflare Function:", error);
     return new Response(JSON.stringify({ error: error.message || 'An internal server error occurred.' }), { 
         status: 500,

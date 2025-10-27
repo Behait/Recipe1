@@ -34,10 +34,10 @@ export const onRequestGet = async ({ request }: any) => {
       ? filtered
           .map((name) => {
             const encoded = encodeURIComponent(name);
-            return `<a class="tag" href="/categories/${encoded}">${escapeHtml(name)}</a>`;
+            return `<a class="inline-flex items-center px-3 py-1.5 rounded-full border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200" href="/categories/${encoded}">${escapeHtml(name)}</a>`;
           })
           .join("\n")
-      : `<p class="empty">暂无匹配分类，请更换搜索词。</p>`;
+      : `<p class="text-slate-600 dark:text-slate-400">暂无匹配分类，请更换搜索词。</p>`;
 
     const html = `<!doctype html>
 <html lang="zh">
@@ -54,28 +54,20 @@ export const onRequestGet = async ({ request }: any) => {
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="${escapeHtml(title)}" />
   <meta name="twitter:description" content="${escapeHtml(description)}" />
-  <style>
-    body{font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin:0;}
-    header{padding:16px 24px; border-bottom:1px solid #eee;}
-    main{max-width:960px; margin:0 auto; padding:16px;}
-    .tags{display:flex; flex-wrap:wrap; gap:8px;}
-    .tag{display:inline-block; padding:8px 12px; border:1px solid #ddd; border-radius:16px; text-decoration:none; color:#333; background:#fafafa;}
-    .tag:hover{background:#f0f0f0;}
-    .empty{color:#777;}
-    form.search{display:flex; gap:8px;}
-    form.search input{flex:1;}
-  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <header>
-    <h1>${escapeHtml(title)}</h1>
-    <form class="search" method="GET" action="/categories/">
-      <input type="text" name="q" value="${escapeHtml(q)}" placeholder="搜索常见分类（如：家常菜、川菜、素菜）" />
-      <button type="submit">搜索</button>
-    </form>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100">
+  <header class="bg-white dark:bg-slate-800 shadow-md sticky top-0">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
+      <h1 class="text-2xl font-bold">${escapeHtml(title)}</h1>
+      <form class="flex items-center gap-2 ml-auto" method="GET" action="/categories/">
+        <input class="flex-1 min-w-64 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2" type="text" name="q" value="${escapeHtml(q)}" placeholder="搜索常见分类（如：家常菜、川菜、素菜）" />
+        <button class="inline-flex items-center px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" type="submit">搜索</button>
+      </form>
+    </div>
   </header>
-  <main>
-    <section class="tags">
+  <main class="max-w-5xl mx-auto px-4 py-6">
+    <section class="flex flex-wrap gap-2">
       ${tagsHtml}
     </section>
   </main>

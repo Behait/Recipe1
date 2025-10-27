@@ -64,12 +64,8 @@ export const onRequestGet = async ({ params, request, env }: any) => {
       .map((it) => {
         const recipeName = escapeHtml(it.recipe_name);
         const desc = escapeHtml(it.description || "");
-        const img = it.image_url ? `<img src="${escapeHtml(it.image_url)}" alt="${recipeName}" loading="lazy"/>` : "";
-        return `<article class="card">
-          <a href="/recipes/${it.slug}" class="thumb">${img}</a>
-          <h2><a href="/recipes/${it.slug}">${recipeName}</a></h2>
-          <p class="desc">${desc}</p>
-        </article>`;
+        const img = it.image_url ? `<img class=\"w-full h-40 object-cover\" src=\"${escapeHtml(it.image_url)}\" alt=\"${recipeName}\" loading=\"lazy\"/>` : "";
+        return `<article class=\"rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden\">\n          <a href=\"/recipes/${it.slug}\" class=\"block\">${img}</a>\n          <div class=\"p-3 space-y-2\">\n            <h2 class=\"text-lg font-semibold\"><a class=\"hover:text-indigo-600\" href=\"/recipes/${it.slug}\">${recipeName}</a></h2>\n            <p class=\"text-slate-600 dark:text-slate-400 line-clamp-3\">${desc}</p>\n          </div>\n        </article>`;
       })
       .join("\n");
 
@@ -88,31 +84,24 @@ export const onRequestGet = async ({ params, request, env }: any) => {
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="${escapeHtml(title)}" />
   <meta name="twitter:description" content="${escapeHtml(description)}" />
-  <style>
-    body{font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin:0;}
-    header{padding:16px 24px; border-bottom:1px solid #eee;}
-    main{max-width:960px; margin:0 auto; padding:16px; display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:16px;}
-    .card{border:1px solid #eee; border-radius:8px; padding:12px; background:#fff;}
-    .thumb img{width:100%; height:auto; border-radius:6px; display:block;}
-    .desc{color:#555;}
-    nav.pagination{max-width:960px; margin:16px auto; padding:0 16px; display:flex; gap:8px;}
-    nav.pagination a{padding:8px 12px; border:1px solid #ddd; border-radius:6px; text-decoration:none; color:#333;}
-  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <header>
-    <h1>${escapeHtml(title)}</h1>
-    <form method="GET" action="/categories/${encodedName}" style="display:flex; gap:8px">
-      <input type="text" name="q" value="${escapeHtml(q || "")}" placeholder="在该分类内搜索" />
-      <button type="submit">搜索</button>
-    </form>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100">
+  <header class="bg-white dark:bg-slate-800 shadow-md sticky top-0">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
+      <h1 class="text-2xl font-bold">${escapeHtml(title)}</h1>
+      <form method="GET" action="/categories/${encodedName}" class="flex items-center gap-2 ml-auto">
+        <input class="flex-1 min-w-64 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2" type="text" name="q" value="${escapeHtml(q || "")}" placeholder="在该分类内搜索" />
+        <button class="inline-flex items-center px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" type="submit">搜索</button>
+      </form>
+    </div>
   </header>
-  <main>
+  <main class="max-w-5xl mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
     ${listHtml}
   </main>
-  <nav class="pagination">
-    ${page > 1 ? `<a href="/categories/${encodedName}?page=${page - 1}&limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ""}">上一页</a>` : ""}
-    ${page * limit < total ? `<a href="/categories/${encodedName}?page=${page + 1}&limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ""}">下一页</a>` : ""}
+  <nav class="max-w-5xl mx-auto px-4 pb-8 flex gap-2">
+    ${page > 1 ? `<a class=\"inline-flex items-center px-3 py-2 rounded-md border bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200\" href=\"/categories/${encodedName}?page=${page - 1}&limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ""}\">上一页</a>` : ""}
+    ${page * limit < total ? `<a class=\"inline-flex items-center px-3 py-2 rounded-md border bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200\" href=\"/categories/${encodedName}?page=${page + 1}&limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ""}\">下一页</a>` : ""}
   </nav>
 </body>
 </html>`;
