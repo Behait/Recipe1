@@ -1,4 +1,4 @@
-import { getSql } from "../_lib/db";
+import { getSql, listRecipesByCategoryName, listRecipesByCategorySlug } from "../_lib/db";
 
 function escapeHtml(str: string) {
   return (str || "")
@@ -23,35 +23,48 @@ export const onRequestGet = async ({ params, request, env }: any) => {
     if (!conn) return new Response("DB not configured", { status: 500 });
 
     const sql = getSql(conn);
-    const offset = (page - 1) * limit;
-    const patternName = '%' + name + '%';
-
+    // 改为基于关联表的查询，确保显示真实关联的菜谱
     let items: any[] = [];
     let total = 0;
-
-    if (q && q.trim()) {
-      const patternQ = '%' + q + '%';
-      items = await sql`
-        SELECT id, slug, recipe_name, description, image_url, source, created_at
-        FROM recipes
-        WHERE (recipe_name ILIKE ${patternName} OR description ILIKE ${patternName})
-          AND (recipe_name ILIKE ${patternQ} OR description ILIKE ${patternQ})
-        ORDER BY created_at DESC OFFSET ${offset} LIMIT ${limit}`;
-      const countRows = await sql`
-        SELECT COUNT(*)::int AS count FROM recipes
-        WHERE (recipe_name ILIKE ${patternName} OR description ILIKE ${patternName})
-          AND (recipe_name ILIKE ${patternQ} OR description ILIKE ${patternQ})`;
-      total = countRows[0]?.count ?? 0;
-    } else {
-      items = await sql`
-        SELECT id, slug, recipe_name, description, image_url, source, created_at
-        FROM recipes
-        WHERE (recipe_name ILIKE ${patternName} OR description ILIKE ${patternName})
-        ORDER BY created_at DESC OFFSET ${offset} LIMIT ${limit}`;
-      const countRows = await sql`
-        SELECT COUNT(*)::int AS count FROM recipes
-        WHERE (recipe_name ILIKE ${patternName} OR description ILIKE ${patternName})`;
-      total = countRows[0]?.count ?? 0;
+    try {
+      const res = await listRecipesByCategoryName(sql, name, page, limit, q || undefined);
+      items = res.items || [];
+      total = res.total || 0;
+    } catch (err) {
+      console.error("listRecipesByCategoryName error, fallback to slug:", err);
+      try {
+        const res2 = await listRecipesByCategorySlug(sql, name, page, limit, q || undefined);
+        items = res2.items || [];
+        total = res2.total || 0;
+      } catch (err2) {
+        console.error("listRecipesByCategorySlug error, fallback to text search:", err2);
+        const offset = (page - 1) * limit;
+        const patternName = '%' + name + '%';
+        if (q && q.trim()) {
+          const patternQ = '%' + q + '%';
+          items = await sql`
+            SELECT id, slug, recipe_name, description, image_url, source, created_at
+            FROM recipes
+            WHERE (recipe_name ILIKE ${patternName} OR description ILIKE ${patternName})
+              AND (recipe_name ILIKE ${patternQ} OR description ILIKE ${patternQ})
+            ORDER BY created_at DESC OFFSET ${offset} LIMIT ${limit}`;
+          const countRows = await sql`
+            SELECT COUNT(*)::int AS count FROM recipes
+            WHERE (recipe_name ILIKE ${patternName} OR description ILIKE ${patternName})
+              AND (recipe_name ILIKE ${patternQ} OR description ILIKE ${patternQ})`;
+          total = countRows[0]?.count ?? 0;
+        } else {
+          items = await sql`
+            SELECT id, slug, recipe_name, description, image_url, source, created_at
+            FROM recipes
+            WHERE (recipe_name ILIKE ${patternName} OR description ILIKE ${patternName})
+            ORDER BY created_at DESC OFFSET ${offset} LIMIT ${limit}`;
+          const countRows = await sql`
+            SELECT COUNT(*)::int AS count FROM recipes
+            WHERE (recipe_name ILIKE ${patternName} OR description ILIKE ${patternName})`;
+          total = countRows[0]?.count ?? 0;
+        }
+      }
     }
 
     const encodedName = encodeURIComponent(name);

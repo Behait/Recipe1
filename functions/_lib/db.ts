@@ -129,17 +129,31 @@ export async function linkRecipeToCategory(sql: any, recipeId: string, categoryN
 export async function listRecipesByCategoryName(sql: any, categoryName: string, page: number, limit: number, q?: string): Promise<{ items: any[]; total: number }>{
   const offset = (page - 1) * limit;
   const qVal = q && q.trim() ? q.trim() : null;
-  const rows = await sql`SELECT r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at
-                         FROM recipe_categories rc JOIN categories c ON rc.category_id = c.id
-                           JOIN recipes r ON rc.recipe_id = r.id
-                         WHERE c.name = ${categoryName}
-                           AND CASE WHEN ${qVal}::text IS NULL THEN TRUE ELSE (r.recipe_name ILIKE '%' || ${qVal} || '%' OR r.description ILIKE '%' || ${qVal} || '%') END
-                         ORDER BY r.created_at DESC OFFSET ${offset} LIMIT ${limit}`;
-  const countRows = await sql`SELECT COUNT(*)::int AS count
-                              FROM recipe_categories rc JOIN categories c ON rc.category_id = c.id
-                                JOIN recipes r ON rc.recipe_id = r.id
-                              WHERE c.name = ${categoryName}
-                                AND CASE WHEN ${qVal}::text IS NULL THEN TRUE ELSE (r.recipe_name ILIKE '%' || ${qVal} || '%' OR r.description ILIKE '%' || ${qVal} || '%') END`;
+  let rows: any[] = [];
+  let countRows: any[] = [];
+  if (!qVal) {
+    rows = await sql`SELECT r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at
+                     FROM recipe_categories rc JOIN categories c ON rc.category_id = c.id
+                       JOIN recipes r ON rc.recipe_id = r.id
+                     WHERE c.name = ${categoryName}
+                     ORDER BY r.created_at DESC OFFSET ${offset} LIMIT ${limit}`;
+    countRows = await sql`SELECT COUNT(*)::int AS count
+                          FROM recipe_categories rc JOIN categories c ON rc.category_id = c.id
+                            JOIN recipes r ON rc.recipe_id = r.id
+                          WHERE c.name = ${categoryName}`;
+  } else {
+    rows = await sql`SELECT r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at
+                     FROM recipe_categories rc JOIN categories c ON rc.category_id = c.id
+                       JOIN recipes r ON rc.recipe_id = r.id
+                     WHERE c.name = ${categoryName}
+                       AND (r.recipe_name ILIKE '%' || ${qVal} || '%' OR r.description ILIKE '%' || ${qVal} || '%')
+                     ORDER BY r.created_at DESC OFFSET ${offset} LIMIT ${limit}`;
+    countRows = await sql`SELECT COUNT(*)::int AS count
+                          FROM recipe_categories rc JOIN categories c ON rc.category_id = c.id
+                            JOIN recipes r ON rc.recipe_id = r.id
+                          WHERE c.name = ${categoryName}
+                            AND (r.recipe_name ILIKE '%' || ${qVal} || '%' OR r.description ILIKE '%' || ${qVal} || '%')`;
+  }
   return { items: rows, total: countRows[0]?.count ?? 0 };
 }
 
@@ -199,17 +213,31 @@ export async function deleteCategory(sql: any, id: string): Promise<void> {
 export async function listRecipesByCategorySlug(sql: any, slug: string, page: number, limit: number, q?: string): Promise<{ items: any[]; total: number }>{
   const offset = (page - 1) * limit;
   const qVal = q && q.trim() ? q.trim() : null;
-  const rows = await sql`SELECT r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at
-                         FROM recipe_categories rc JOIN categories c ON rc.category_id = c.id
-                           JOIN recipes r ON rc.recipe_id = r.id
-                         WHERE c.slug = ${slug}
-                           AND CASE WHEN ${qVal}::text IS NULL THEN TRUE ELSE (r.recipe_name ILIKE '%' || ${qVal} || '%' OR r.description ILIKE '%' || ${qVal} || '%') END
-                         ORDER BY r.created_at DESC OFFSET ${offset} LIMIT ${limit}`;
-  const countRows = await sql`SELECT COUNT(*)::int AS count
-                              FROM recipe_categories rc JOIN categories c ON rc.category_id = c.id
-                                JOIN recipes r ON rc.recipe_id = r.id
-                              WHERE c.slug = ${slug}
-                                AND CASE WHEN ${qVal}::text IS NULL THEN TRUE ELSE (r.recipe_name ILIKE '%' || ${qVal} || '%' OR r.description ILIKE '%' || ${qVal} || '%') END`;
+  let rows: any[] = [];
+  let countRows: any[] = [];
+  if (!qVal) {
+    rows = await sql`SELECT r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at
+                     FROM recipe_categories rc JOIN categories c ON rc.category_id = c.id
+                       JOIN recipes r ON rc.recipe_id = r.id
+                     WHERE c.slug = ${slug}
+                     ORDER BY r.created_at DESC OFFSET ${offset} LIMIT ${limit}`;
+    countRows = await sql`SELECT COUNT(*)::int AS count
+                          FROM recipe_categories rc JOIN categories c ON rc.category_id = c.id
+                            JOIN recipes r ON rc.recipe_id = r.id
+                          WHERE c.slug = ${slug}`;
+  } else {
+    rows = await sql`SELECT r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at
+                     FROM recipe_categories rc JOIN categories c ON rc.category_id = c.id
+                       JOIN recipes r ON rc.recipe_id = r.id
+                     WHERE c.slug = ${slug}
+                       AND (r.recipe_name ILIKE '%' || ${qVal} || '%' OR r.description ILIKE '%' || ${qVal} || '%')
+                     ORDER BY r.created_at DESC OFFSET ${offset} LIMIT ${limit}`;
+    countRows = await sql`SELECT COUNT(*)::int AS count
+                          FROM recipe_categories rc JOIN categories c ON rc.category_id = c.id
+                            JOIN recipes r ON rc.recipe_id = r.id
+                          WHERE c.slug = ${slug}
+                            AND (r.recipe_name ILIKE '%' || ${qVal} || '%' OR r.description ILIKE '%' || ${qVal} || '%')`;
+  }
   return { items: rows, total: countRows[0]?.count ?? 0 };
 }
 
