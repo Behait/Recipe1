@@ -1,5 +1,5 @@
-import { getSql, getRecipeBySlug, incrementRecipeHit } from "../_lib/db";
-import { renderHeader, renderFooter } from "../_lib/layout";
+import { getSql, getRecipeBySlug, incrementRecipeHit, listCategoriesByRecipeSlug, listRecipesByCategorySlug, getPrevRecipeByCreatedAt, getNextRecipeByCreatedAt } from "../_lib/db";
+import { renderHeader, renderFooter, renderHead } from "../_lib/layout";
 
 function escapeHtml(str: string) {
   return (str || "")
@@ -33,6 +33,21 @@ export const onRequestGet = async ({ params, env, request }: any) => {
     const instructionsHtml = (recipe.instructions || [])
       .map((s: string, idx: number) => `<li><strong>步骤 ${idx + 1}：</strong> ${escapeHtml(s)}</li>`)?.join("\n") || "";
 
+    const categories = await listCategoriesByRecipeSlug(sql, slug);
+    const relatedPool: any[] = [];
+    for (const cat of categories.slice(0, 2)) {
+      const { items } = await listRecipesByCategorySlug(sql, cat.slug, 1, 8);
+      relatedPool.push(...items);
+    }
+    const seen: Record<string, boolean> = {};
+    const related = relatedPool
+      .filter((r) => r.id !== recipe.id)
+      .filter((r) => (seen[r.id] ? false : (seen[r.id] = true)))
+      .slice(0, 6);
+
+    const prev = await getPrevRecipeByCreatedAt(sql, recipe.created_at);
+    const next = await getNextRecipeByCreatedAt(sql, recipe.created_at);
+
     const jsonLd = {
       "@context": "https://schema.org",
       "@type": "Recipe",
@@ -42,6 +57,12 @@ export const onRequestGet = async ({ params, env, request }: any) => {
       "recipeIngredient": recipe.ingredients || [],
       "recipeInstructions": (recipe.instructions || []).map((txt: string) => ({ "@type": "HowToStep", text: txt })),
       "totalTime": `${recipe.prep_time} + ${recipe.cook_time}`,
+      "datePublished": recipe.created_at || undefined,
+      "dateModified": recipe.created_at || undefined,
+      "author": { "@type": "Organization", "name": "AI 菜谱" },
+      "recipeCategory": (categories || []).map((c: any) => c.name),
+      "keywords": (categories || []).map((c: any) => c.name).join(", ") || undefined,
+      "mainEntityOfPage": url.origin + "/recipes/" + slug,
     };
 
     const breadcrumbLd = {
@@ -57,23 +78,19 @@ export const onRequestGet = async ({ params, env, request }: any) => {
     const html = `<!doctype html>
 <html lang="zh">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${title}</title>
-  <meta name="description" content="${description}" />
-  <link rel="canonical" href="${escapeHtml(url.origin + "/recipes/" + slug)}" />
-  <meta property="og:title" content="${escapeHtml(recipe.recipe_name)}" />
-  <meta property="og:description" content="${description}" />
-  <meta property="og:type" content="article" />
-  <meta property="og:url" content="${escapeHtml(url.origin + "/recipes/" + slug)}" />
-  ${recipe.image_url ? `<meta property=\"og:image\" content=\"${escapeHtml(recipe.image_url)}\" />` : ""}
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="${escapeHtml(recipe.recipe_name)}" />
-  <meta name="twitter:description" content="${description}" />
-  ${recipe.image_url ? `<meta name=\"twitter:image\" content=\"${escapeHtml(recipe.image_url)}\" />` : ""}
+  ${renderHead({
+    title,
+    description,
+    canonical: url.origin + "/recipes/" + slug,
+    ogType: "article",
+    ogUrl: url.origin + "/recipes/" + slug,
+    ogImage: recipe.image_url,
+    siteName: "AI 菜谱",
+    locale: "zh_CN",
+    alternates: { rss: "/rss.xml" }
+  })}
   <script type="application/ld+json">${escapeHtml(JSON.stringify(jsonLd))}</script>
   <script type="application/ld+json">${escapeHtml(JSON.stringify(breadcrumbLd))}</script>
-  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100">
   ${renderHeader({
@@ -88,6 +105,15 @@ export const onRequestGet = async ({ params, env, request }: any) => {
     </form>'
   })}
   <main class="max-w-4xl mx-auto px-4 py-6">
+    <nav aria-label="Breadcrumb" class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+      <ol class="flex flex-wrap items-center gap-2">
+        <li><a href="/" class="hover:text-emerald-600">首页</a></li>
+        <li>/</li>
+        <li><a href="/recipes/" class="hover:text-emerald-600">菜谱</a></li>
+        <li>/</li>
+        <li class="text-slate-700 dark:text-slate-300 truncate max-w-[60ch]" title="${escapeHtml(recipe.recipe_name)}">${escapeHtml(recipe.recipe_name)}</li>
+      </ol>
+    </nav>
     <article class="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
       <figure class="w-full h-48 sm:h-64 bg-slate-100">${img}</figure>
       <div class="p-6 sm:p-8">
@@ -118,6 +144,30 @@ export const onRequestGet = async ({ params, env, request }: any) => {
                 </li>
               `).join('')}
             </ol>
+          </div>
+        </section>
+        ${(related && related.length) ? `
+        <section class="mt-10">
+          <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-4">你可能还喜欢</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            ${related.map((r: any) => `
+              <a href="/recipes/${escapeHtml(r.slug)}" class="block rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow bg-white dark:bg-slate-800">
+                <div class="h-36 bg-slate-100 overflow-hidden">${r.image_url ? `<img src='${escapeHtml(r.image_url)}' alt='${escapeHtml(r.recipe_name)}' class='w-full h-full object-cover' loading='lazy'/>` : ''}</div>
+                <div class="p-3">
+                  <h3 class="font-medium text-slate-800 dark:text-slate-200 line-clamp-1">${escapeHtml(r.recipe_name)}</h3>
+                  <p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">${escapeHtml(r.description || '')}</p>
+                </div>
+              </a>
+            `).join('')}
+          </div>
+        </section>
+        ` : ''}
+        <section class="mt-8 flex items-center justify-between">
+          <div>
+            ${prev ? `<a class=\"text-emerald-600 hover:underline\" href=\"/recipes/${escapeHtml(prev.slug)}\">← 上一篇：${escapeHtml(prev.recipe_name)}<\/a>` : '<span class="text-slate-400">已是最新</span>'}
+          </div>
+          <div>
+            ${next ? `<a class=\"text-emerald-600 hover:underline\" href=\"/recipes/${escapeHtml(next.slug)}\">下一篇：${escapeHtml(next.recipe_name)} →<\/a>` : '<span class="text-slate-400">已是最早</span>'}
           </div>
         </section>
       </div>

@@ -1,5 +1,5 @@
 import { getSql, listRecipesByCategoryName, listRecipesByCategorySlug } from "../_lib/db";
-import { renderHeader, renderFooter } from "../_lib/layout";
+import { renderHeader, renderFooter, renderHead } from "../_lib/layout";
 
 function escapeHtml(str: string) {
   return (str || "")
@@ -81,26 +81,32 @@ export const onRequestGet = async ({ params, request, env }: any) => {
         const recipeName = escapeHtml(it.recipe_name);
         const desc = escapeHtml(it.description || "");
         const img = it.image_url ? `<img class=\"w-full h-40 object-cover\" src=\"${escapeHtml(it.image_url)}\" alt=\"${recipeName}\" loading=\"lazy\"/>` : "";
-        return `<article class=\"rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden\">\n          <a href=\"/recipes/${it.id}\" class=\"block\">${img}</a>\n          <div class=\"p-3 space-y-2\">\n            <h2 class=\"text-lg font-semibold\"><a class=\"hover:text-indigo-600\" href=\"/recipes/${it.id}\">${recipeName}</a></h2>\n            <p class=\"text-slate-600 dark:text-slate-400 line-clamp-3\">${desc}</p>\n          </div>\n        </article>`;
+        const slug = escapeHtml(it.slug || String(it.id));
+        return `<article class=\"rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden\">\n          <a href=\"/recipes/${slug}\" class=\"block\">${img}</a>\n          <div class=\"p-3 space-y-2\">\n            <h2 class=\"text-lg font-semibold\"><a class=\"hover:text-indigo-600\" href=\"/recipes/${slug}\">${recipeName}</a></h2>\n            <p class=\"text-slate-600 dark:text-slate-400 line-clamp-3\">${desc}</p>\n          </div>\n        </article>`;
       })
       .join("\n");
+
+    const shouldNoindex = Boolean(q);
+    const canonicalBase = url.origin + "/categories/" + encodedName;
+    const hasNext = page * limit < total;
+    const canonical = !q ? (page > 1 ? `${canonicalBase}?page=${page}&limit=${limit}` : canonicalBase) : canonicalBase;
 
     const html = `<!doctype html>
 <html lang="zh">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${escapeHtml(title)}</title>
-  <meta name="description" content="${escapeHtml(description)}" />
-  <link rel="canonical" href="${escapeHtml(url.origin + "/categories/" + encodedName)}" />
-  <meta property="og:title" content="${escapeHtml(title)}" />
-  <meta property="og:description" content="${escapeHtml(description)}" />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="${escapeHtml(url.origin + "/categories/" + encodedName)}" />
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="${escapeHtml(title)}" />
-  <meta name="twitter:description" content="${escapeHtml(description)}" />
-  <script src="https://cdn.tailwindcss.com"></script>
+  ${renderHead({
+    title: escapeHtml(title),
+    description: escapeHtml(description),
+    canonical: canonical,
+    robotsNoindex: shouldNoindex,
+    prevHref: page > 1 ? `${canonicalBase}?page=${page - 1}&limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ''}` : undefined,
+    nextHref: hasNext ? `${canonicalBase}?page=${page + 1}&limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ''}` : undefined,
+    ogType: 'website',
+    ogUrl: canonical,
+    siteName: 'AI 菜谱',
+    locale: 'zh_CN',
+    alternates: { rss: '/rss.xml' }
+  })}
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100">
   ${renderHeader({
@@ -114,8 +120,19 @@ export const onRequestGet = async ({ params, request, env }: any) => {
       <button class="inline-flex items-center px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" type="submit">搜索</button>\
     </form>'
   })}
-  <main class="max-w-4xl mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+  <main class="max-w-4xl mx-auto px-4 py-6">
+    <nav aria-label="Breadcrumb" class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+      <ol class="flex flex-wrap items-center gap-2">
+        <li><a href="/" class="hover:text-emerald-600">首页</a></li>
+        <li>/</li>
+        <li><a href="/categories/" class="hover:text-emerald-600">分类</a></li>
+        <li>/</li>
+        <li class="text-slate-700 dark:text-slate-300 truncate max-w-[60ch]" title="${escapeHtml(name)}">${escapeHtml(name)}</li>
+      </ol>
+    </nav>
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
     ${listHtml}
+    </section>
   </main>
   <nav class="max-w-4xl mx-auto px-4 pb-8 flex gap-2">
     ${page > 1 ? `<a class=\"inline-flex items-center px-3 py-2 rounded-md border bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200\" href=\"/categories/${encodedName}?page=${page - 1}&limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ""}\">上一页</a>` : ""}

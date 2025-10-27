@@ -8,6 +8,76 @@ export type FooterOptions = {
   widthClass?: string;
 };
 
+export type HeadOptions = {
+  lang?: string;
+  title: string;
+  description?: string;
+  canonical?: string;
+  robotsNoindex?: boolean;
+  ogType?: string; // website | article
+  ogUrl?: string;
+  ogImage?: string | null | undefined;
+  siteName?: string;
+  locale?: string;
+  prevHref?: string;
+  nextHref?: string;
+  alternates?: {
+    rss?: string;
+  };
+  extraMetaHtml?: string; // custom injections
+};
+
+function esc(v: any): string {
+  const s = String(v ?? "");
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+export function renderHead(opts: HeadOptions): string {
+  const title = esc(opts.title || "");
+  const desc = esc(opts.description || "");
+  const canonical = opts.canonical ? esc(opts.canonical) : "";
+  const robots = opts.robotsNoindex ? '<meta name="robots" content="noindex,follow" />' : '';
+  const ogType = esc(opts.ogType || "website");
+  const ogUrl = esc(opts.ogUrl || opts.canonical || "");
+  const ogImageMeta = opts.ogImage ? `<meta property="og:image" content="${esc(opts.ogImage)}" />` : "";
+  const siteName = esc(opts.siteName || "AI 菜谱");
+  const locale = esc(opts.locale || "zh_CN");
+  const prev = opts.prevHref ? `<link rel="prev" href="${esc(opts.prevHref)}" />` : '';
+  const next = opts.nextHref ? `<link rel="next" href="${esc(opts.nextHref)}" />` : '';
+  const rss = opts.alternates?.rss ? `<link rel="alternate" type="application/rss+xml" title="最新菜谱 RSS" href="${esc(opts.alternates.rss)}" />` : '';
+  const canonicalLink = canonical ? `<link rel="canonical" href="${canonical}" />` : '';
+
+  return `
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${title}</title>
+  ${desc ? `<meta name=\"description\" content=\"${desc}\" />` : ''}
+  ${canonicalLink}
+  ${robots}
+  ${prev}
+  ${next}
+  <meta property="og:title" content="${title}" />
+  ${desc ? `<meta property=\"og:description\" content=\"${desc}\" />` : ''}
+  <meta property="og:type" content="${ogType}" />
+  ${ogUrl ? `<meta property=\"og:url\" content=\"${ogUrl}\" />` : ''}
+  <meta property="og:site_name" content="${siteName}" />
+  <meta property="og:locale" content="${locale}" />
+  ${ogImageMeta}
+  <meta name="twitter:card" content="${ogType === 'article' ? 'summary_large_image' : 'summary'}" />
+  <meta name="twitter:title" content="${title}" />
+  ${desc ? `<meta name=\"twitter:description\" content=\"${desc}\" />` : ''}
+  ${opts.ogImage ? `<meta name=\"twitter:image\" content=\"${esc(opts.ogImage)}\" />` : ''}
+  ${rss}
+  ${opts.extraMetaHtml || ''}
+  <script src="https://cdn.tailwindcss.com"></script>
+  `;
+}
+
 export function renderHeader(opts: HeaderOptions = {}): string {
   const widthClass = opts.widthClass || "max-w-4xl";
   const rightHtml = opts.rightHtml || "";

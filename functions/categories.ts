@@ -1,5 +1,5 @@
 import { getSql, listCategories } from "./_lib/db";
-import { renderHeader, renderFooter } from "./_lib/layout";
+import { renderHeader, renderFooter, renderHead } from "./_lib/layout";
 
 function escapeHtml(str: string) {
   return (str || "")
@@ -42,22 +42,21 @@ export const onRequestGet = async ({ request, env }: any) => {
       tagsHtml = `<p class="text-slate-600 dark:text-slate-400">分类数据暂不可用。</p>`;
     }
 
+    const shouldNoindex = Boolean(q);
     const html = `<!doctype html>
 <html lang="zh">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${escapeHtml(title)}</title>
-  <meta name="description" content="${escapeHtml(description)}" />
-  <link rel="canonical" href="${escapeHtml(url.origin + "/categories/")}" />
-  <meta property="og:title" content="${escapeHtml(title)}" />
-  <meta property="og:description" content="${escapeHtml(description)}" />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="${escapeHtml(url.origin + "/categories/")}" />
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="${escapeHtml(title)}" />
-  <meta name="twitter:description" content="${escapeHtml(description)}" />
-  <script src="https://cdn.tailwindcss.com"></script>
+  ${renderHead({
+    title: escapeHtml(title),
+    description: escapeHtml(description),
+    canonical: url.origin + "/categories/",
+    robotsNoindex: shouldNoindex,
+    ogType: 'website',
+    ogUrl: url.origin + "/categories/",
+    siteName: 'AI 菜谱',
+    locale: 'zh_CN',
+    alternates: { rss: '/rss.xml' }
+  })}
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100">
   ${renderHeader({
@@ -72,6 +71,13 @@ export const onRequestGet = async ({ request, env }: any) => {
     </form>'
   })}
   <main class="max-w-4xl mx-auto px-4 py-6">
+    <nav aria-label="Breadcrumb" class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+      <ol class="flex flex-wrap items-center gap-2">
+        <li><a href="/" class="hover:text-emerald-600">首页</a></li>
+        <li>/</li>
+        <li class="text-slate-700 dark:text-slate-300">分类</li>
+      </ol>
+    </nav>
     <section class="flex flex-wrap gap-2">
       ${tagsHtml}
     </section>

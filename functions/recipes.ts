@@ -76,9 +76,15 @@ export const onRequestGet = async ({ request, env }: any) => {
         const name = escapeHtml(it.recipe_name);
         const desc = escapeHtml(it.description || "");
         const img = it.image_url ? `<img class=\"w-full h-40 object-cover\" src=\"${escapeHtml(it.image_url)}\" alt=\"${name}\" loading=\"lazy\"/>` : "";
-        return `<article class=\"rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden\">\n          <a href=\"/recipes/${it.id}\" class=\"block\">${img}</a>\n          <div class=\"p-3 space-y-2\">\n            <h2 class=\"text-lg font-semibold\"><a class=\"hover:text-indigo-600\" href=\"/recipes/${it.id}\">${name}</a></h2>\n            <p class=\"text-slate-600 dark:text-slate-400 line-clamp-3\">${desc}</p>\n          </div>\n        </article>`;
+        const slug = escapeHtml(it.slug || String(it.id));
+        return `<article class=\"rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden\">\n          <a href=\"/recipes/${slug}\" class=\"block\">${img}</a>\n          <div class=\"p-3 space-y-2\">\n            <h2 class=\"text-lg font-semibold\"><a class=\"hover:text-indigo-600\" href=\"/recipes/${slug}\">${name}</a></h2>\n            <p class=\"text-slate-600 dark:text-slate-400 line-clamp-3\">${desc}</p>\n          </div>\n        </article>`;
       })
       .join("\n");
+
+    const canonicalBase = url.origin + "/recipes/";
+    const shouldNoindex = Boolean(q) || Boolean(sort);
+    const hasNext = page * limit < total;
+    const canonical = !q && !sort ? (page > 1 ? `${canonicalBase}?page=${page}&limit=${limit}` : canonicalBase) : canonicalBase;
 
     const html = `<!doctype html>
 <html lang="zh">
@@ -87,14 +93,20 @@ export const onRequestGet = async ({ request, env }: any) => {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeHtml(description)}" />
-  <link rel="canonical" href="${escapeHtml(url.origin + "/recipes/")}" />
+  <link rel="canonical" href="${escapeHtml(canonical)}" />
+  ${shouldNoindex ? '<meta name="robots" content="noindex,follow" />' : ''}
+  ${page > 1 ? `<link rel="prev" href="${escapeHtml(`${canonicalBase}?page=${page - 1}&limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ""}${sort ? `&sort=${encodeURIComponent(sort)}` : ""}`)}" />` : ''}
+  ${hasNext ? `<link rel="next" href="${escapeHtml(`${canonicalBase}?page=${page + 1}&limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ""}${sort ? `&sort=${encodeURIComponent(sort)}` : ""}`)}" />` : ''}
   <meta property="og:title" content="${escapeHtml(title)}" />
   <meta property="og:description" content="${escapeHtml(description)}" />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="${escapeHtml(url.origin + "/recipes/")}" />
+  <meta property="og:url" content="${escapeHtml(canonical)}" />
+  <meta property="og:site_name" content="AI 菜谱" />
+  <meta property="og:locale" content="zh_CN" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="${escapeHtml(title)}" />
   <meta name="twitter:description" content="${escapeHtml(description)}" />
+  <link rel="alternate" type="application/rss+xml" title="最新菜谱 RSS" href="/rss.xml" />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100">

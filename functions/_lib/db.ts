@@ -111,6 +111,17 @@ export async function incrementRecipeHit(sql: any, id: string): Promise<void> {
             DO UPDATE SET hit_count = recipe_hit_stats.hit_count + 1`;
 }
 
+// Adjacent navigation helpers for detail pages
+export async function getPrevRecipeByCreatedAt(sql: any, createdAt: string): Promise<any | null> {
+  const rows = await sql`SELECT id, slug, recipe_name, created_at FROM recipes WHERE created_at > ${createdAt} ORDER BY created_at ASC LIMIT 1`;
+  return rows[0] ?? null;
+}
+
+export async function getNextRecipeByCreatedAt(sql: any, createdAt: string): Promise<any | null> {
+  const rows = await sql`SELECT id, slug, recipe_name, created_at FROM recipes WHERE created_at < ${createdAt} ORDER BY created_at DESC LIMIT 1`;
+  return rows[0] ?? null;
+}
+
 // Categories: upsert and linking helpers
 export async function upsertCategory(sql: any, name: string): Promise<{ id: string; name: string; slug: string }>{
   const slug = name; // 分类 slug 与名称保持一致（名称唯一）

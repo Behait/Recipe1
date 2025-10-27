@@ -65,6 +65,7 @@ export const onRequestGet = async ({ env, request }: any) => {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>管理中心</title>
   <meta name="description" content="站点管理页，仅管理员可访问" />
+  <meta name="robots" content="noindex, nofollow" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style> table { width: 100%; border-collapse: collapse; } th, td { border-color: #e2e8f0; } </style>
 </head>
