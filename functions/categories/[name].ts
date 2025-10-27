@@ -11,7 +11,9 @@ function escapeHtml(str: string) {
 
 export const onRequestGet = async ({ params, request, env }: any) => {
   try {
-    const name = params?.name;
+    // 防止多次编码：先对路径参数做一次 decode，再统一用 encode 构建链接
+    const rawName = String(params?.name || "");
+    const name = decodeURIComponent(rawName);
     if (!name) return new Response("Missing category name", { status: 400 });
 
     const url = new URL(request.url);

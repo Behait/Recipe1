@@ -4,7 +4,9 @@ export const onRequestGet = async ({ env, request, params }: any) => {
   const conn = env.DB_CONNECTION_STRING as string | undefined;
   if (!conn) return new Response(JSON.stringify({ error: 'DB not configured' }), { status: 500 });
 
-  const slug = String(params?.slug || '').trim();
+  // 兼容已编码的路径参数：统一先 decode 再查询
+  const raw = String(params?.slug || '').trim();
+  const slug = decodeURIComponent(raw);
   if (!slug) return new Response(JSON.stringify({ error: 'Missing slug' }), { status: 400 });
 
   const url = new URL(request.url);
