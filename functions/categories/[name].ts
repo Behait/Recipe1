@@ -87,14 +87,53 @@ export const onRequestGet = async ({ params, request, env }: any) => {
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100">
-  <header class="bg-white dark:bg-slate-800 shadow-md sticky top-0">
-    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
-      <h1 class="text-2xl font-bold">${escapeHtml(title)}</h1>
-      <form method="GET" action="/categories/${encodedName}" class="flex items-center gap-2 ml-auto">
-        <input class="flex-1 min-w-64 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2" type="text" name="q" value="${escapeHtml(q || "")}" placeholder="在该分类内搜索" />
-        <button class="inline-flex items-center px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" type="submit">搜索</button>
-      </form>
+  <header class="bg-white dark:bg-slate-800 shadow-md sticky top-0 z-10">
+    <div class="max-w-5xl mx-auto p-4 flex items-center gap-4">
+      <a href="/" class="flex items-center min-w-0">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-500 mr-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path>
+          <path d="M15.5 12c-1.38 2.83-4.62 4.5-7.5 3.5s-4.5-4.62-3.5-7.5c.59-1.68 2.16-3 3.92-3.23"></path>
+          <path d="M12 9.45a2.55 2.55 0 1 0 0 5.1 2.55 2.55 0 0 0 0-5.1z"></path>
+        </svg>
+        <span class="text-2xl font-bold text-slate-800 dark:text-slate-100">菜谱生成器</span>
+      </a>
+      <nav class="hidden md:flex items-center gap-4 ml-auto">
+        <a href="/recipes/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">Recipes</a>
+        <a href="/categories/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">Categories</a>
+        <form method="GET" action="/categories/${encodedName}" class="flex items-center gap-2">
+          <input class="w-52 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2" type="text" name="q" value="${escapeHtml(q || "")}" placeholder="在该分类内搜索" />
+          <button class="inline-flex items-center px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" type="submit">搜索</button>
+        </form>
+      </nav>
+      <div class="ml-auto md:hidden">
+        <button id="menu-button" aria-label="打开菜单" class="p-2 rounded-md border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+      </div>
     </div>
+    <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200 dark:border-slate-700">
+      <div class="max-w-5xl mx-auto p-4 space-y-3">
+        <div class="flex gap-4">
+          <a href="/recipes/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">Recipes</a>
+          <a href="/categories/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">Categories</a>
+        </div>
+        <form method="GET" action="/categories/${encodedName}" class="flex items-center gap-2">
+          <input class="flex-1 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2" type="text" name="q" value="${escapeHtml(q || "")}" placeholder="在该分类内搜索" />
+          <button class="inline-flex items-center px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" type="submit">搜索</button>
+        </form>
+      </div>
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function(){
+        var btn = document.getElementById('menu-button');
+        var menu = document.getElementById('mobile-menu');
+        if(btn && menu){ btn.addEventListener('click', function(){ menu.classList.toggle('hidden'); }); }
+      });
+    </script>
   </header>
   <main class="max-w-5xl mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
     ${listHtml}

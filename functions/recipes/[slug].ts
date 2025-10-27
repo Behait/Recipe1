@@ -74,26 +74,89 @@ export const onRequestGet = async ({ params, env, request }: any) => {
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100">
-  <header class="bg-white dark:bg-slate-800 shadow-md sticky top-0">
-    <div class="max-w-3xl mx-auto px-4 py-3">
-      <a class="text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600" href="/recipes/">← 返回列表</a>
-      <h1 class="text-2xl font-bold mt-2">${escapeHtml(recipe.recipe_name)}</h1>
-      <p class="text-sm text-slate-600 dark:text-slate-400">准备时间：${escapeHtml(recipe.prep_time)} ｜ 烹饪时间：${escapeHtml(recipe.cook_time)}</p>
+  <header class="bg-white dark:bg-slate-800 shadow-md sticky top-0 z-10">
+    <div class="max-w-5xl mx-auto p-4 flex items-center gap-4">
+      <a href="/" class="flex items-center min-w-0">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-500 mr-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path>
+          <path d="M15.5 12c-1.38 2.83-4.62 4.5-7.5 3.5s-4.5-4.62-3.5-7.5c.59-1.68 2.16-3 3.92-3.23"></path>
+          <path d="M12 9.45a2.55 2.55 0 1 0 0 5.1 2.55 2.55 0 0 0 0-5.1z"></path>
+        </svg>
+        <span class="text-2xl font-bold text-slate-800 dark:text-slate-100">菜谱生成器</span>
+      </a>
+      <nav class="hidden md:flex items-center gap-4 ml-auto">
+        <a href="/recipes/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">Recipes</a>
+        <a href="/categories/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">Categories</a>
+        <form method="GET" action="/recipes/" class="flex items-center gap-2">
+          <input class="w-52 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2" type="text" name="q" value="" placeholder="搜索菜谱" />
+          <button class="inline-flex items-center px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" type="submit">搜索</button>
+        </form>
+      </nav>
+      <div class="ml-auto md:hidden">
+        <button id="menu-button" aria-label="打开菜单" class="p-2 rounded-md border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+      </div>
     </div>
+    <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200 dark:border-slate-700">
+      <div class="max-w-5xl mx-auto p-4 space-y-3">
+        <div class="flex gap-4">
+          <a href="/recipes/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">Recipes</a>
+          <a href="/categories/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">Categories</a>
+        </div>
+        <form method="GET" action="/recipes/" class="flex items-center gap-2">
+          <input class="flex-1 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2" type="text" name="q" value="" placeholder="搜索菜谱" />
+          <button class="inline-flex items-center px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" type="submit">搜索</button>
+        </form>
+      </div>
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function(){
+        var btn = document.getElementById('menu-button');
+        var menu = document.getElementById('mobile-menu');
+        if(btn && menu){ btn.addEventListener('click', function(){ menu.classList.toggle('hidden'); }); }
+      });
+    </script>
   </header>
-  <main class="max-w-3xl mx-auto px-4 py-6 space-y-6">
-    <figure class="aspect-video w-full overflow-hidden rounded-lg bg-slate-100">${img}</figure>
-    <p class="text-slate-700 dark:text-slate-300">${description}</p>
-    <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div>
-        <h2 class="text-xl font-semibold">食材</h2>
-        <ul class="list-disc pl-6 space-y-1">${ingredientsHtml}</ul>
+  <main class="max-w-5xl mx-auto px-4 py-6">
+    <article class="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+      <figure class="w-full h-48 sm:h-64 bg-slate-100">${img}</figure>
+      <div class="p-6 sm:p-8">
+        <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-2 tracking-tight">${escapeHtml(recipe.recipe_name)}</h1>
+        <p class="text-slate-600 dark:text-slate-400 mb-6 italic">${description}</p>
+        <div class="flex flex-wrap gap-4 sm:gap-6 mb-6 text-center">
+          <div class="flex-1 min-w-[120px] bg-slate-100 dark:bg-slate-700 p-3 rounded-lg">
+            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">准备时间</p>
+            <p class="text-lg font-bold text-emerald-600 dark:text-emerald-400">${escapeHtml(recipe.prep_time)}</p>
+          </div>
+          <div class="flex-1 min-w-[120px] bg-slate-100 dark:bg-slate-700 p-3 rounded-lg">
+            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">烹饪时间</p>
+            <p class="text-lg font-bold text-emerald-600 dark:text-emerald-400">${escapeHtml(recipe.cook_time)}</p>
+          </div>
+        </div>
+        <section class="grid md:grid-cols-5 gap-8">
+          <div class="md:col-span-2">
+            <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-3 border-b-2 border-emerald-500 pb-2">所需食材</h2>
+            <ul class="space-y-2 list-disc list-inside text-slate-600 dark:text-slate-300">${ingredientsHtml}</ul>
+          </div>
+          <div class="md:col-span-3">
+            <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-3 border-b-2 border-emerald-500 pb-2">制作步骤</h2>
+            <ol class="space-y-4 text-slate-600 dark:text-slate-300">
+              ${(recipe.instructions || []).map((instruction: string, index: number) => `
+                <li class="flex items-start">
+                  <span class="bg-emerald-500 text-white font-bold rounded-full h-6 w-6 text-sm flex items-center justify-center mr-3 flex-shrink-0">${index + 1}</span>
+                  <span>${escapeHtml(instruction)}</span>
+                </li>
+              `).join('')}
+            </ol>
+          </div>
+        </section>
       </div>
-      <div>
-        <h2 class="text-xl font-semibold">步骤</h2>
-        <ol class="list-decimal pl-6 space-y-2">${instructionsHtml}</ol>
-      </div>
-    </section>
+    </article>
   </main>
 </body>
 </html>`;
