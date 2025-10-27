@@ -14,7 +14,7 @@ const Header: React.FC = () => {
 
   return (
     <header className="bg-white dark:bg-slate-800 shadow-md w-full sticky top-0 z-10">
-      <div className="container mx-auto p-4 flex items-center gap-4">
+      <div className="container mx-auto max-w-4xl p-4 flex items-center gap-4">
         <a href="/" className="flex items-center min-w-0">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-emerald-500 mr-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path>
@@ -26,8 +26,8 @@ const Header: React.FC = () => {
 
         {/* 桌面导航 */}
         <nav className="hidden md:flex items-center gap-4 ml-auto">
-          <a href="/recipes/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">Recipes</a>
-          <a href="/categories/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">Categories</a>
+          <a href="/recipes/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">菜谱</a>
+          <a href="/categories/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">分类</a>
           <form onSubmit={handleSearch} className="flex items-center gap-2">
             <input
               type="text"
@@ -54,10 +54,10 @@ const Header: React.FC = () => {
 
       {open && (
         <div className="md:hidden border-t border-slate-200 dark:border-slate-700">
-          <div className="container mx-auto p-4 space-y-3">
+          <div className="container mx-auto max-w-4xl p-4 space-y-3">
             <div className="flex gap-4">
-              <a href="/recipes/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">Recipes</a>
-              <a href="/categories/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">Categories</a>
+              <a href="/recipes/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">菜谱</a>
+              <a href="/categories/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">分类</a>
             </div>
             <form onSubmit={handleSearch} className="flex items-center gap-2">
               <input

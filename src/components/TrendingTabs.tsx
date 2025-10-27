@@ -9,7 +9,7 @@ interface RecipeItem {
   description?: string;
   image_url?: string;
   lifetime_hits?: number;
-  weekly_hits?: number;
+  window_hits?: number;
 }
 
 interface ApiResponse {
@@ -132,7 +132,7 @@ const TrendingTabs: React.FC = () => {
               badge={
                 active === 'popular'
                   ? (typeof it.lifetime_hits === 'number' ? `🔥 ${it.lifetime_hits}` : undefined)
-                  : (typeof it.weekly_hits === 'number' ? `📈 ${it.weekly_hits}` : undefined)
+                  : (typeof it.window_hits === 'number' ? `📈 ${it.window_hits}` : undefined)
               }
             />
           ))}

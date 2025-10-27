@@ -248,7 +248,7 @@ export async function listTrendingByWindow(sql: any, page: number, limit: number
   const rows = await sql`SELECT r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at,
                                 COALESCE(SUM(s.hit_count), 0)::int AS window_hits
                          FROM recipes r
-                         LEFT JOIN recipe_hit_stats s ON s.recipe_id = r.id AND s.hit_date >= (current_date - ${windowDays})
+                         LEFT JOIN recipe_hit_stats s ON s.recipe_id = r.id AND s.hit_date >= (current_date - ${windowDays}::int)
                          WHERE CASE WHEN ${qVal}::text IS NULL THEN TRUE ELSE (r.recipe_name ILIKE '%' || ${qVal} || '%' OR r.description ILIKE '%' || ${qVal} || '%') END
                          GROUP BY r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at
                          ORDER BY window_hits DESC, r.created_at DESC
