@@ -121,6 +121,15 @@ export const onRequestGet = async ({ env, request }: any) => {
     </section>
 
     <section>
+      <h2 class="text-xl font-semibold mb-3">批量导入常见分类</h2>
+      <div class="flex items-center gap-2">
+        <button id="seed-btn" class="px-3 py-2 rounded-md border bg-white hover:bg-slate-50" type="button">导入</button>
+        <span id="seed-result" class="text-sm"></span>
+      </div>
+      <p class="text-slate-500 text-sm mt-1">无需手工一个个新增，点击“导入”即会创建常见分类。</p>
+    </section>
+
+    <section>
       <h2 class="text-xl font-semibold mb-3">给菜谱添加分类</h2>
       <form id="link-form" class="flex flex-wrap items-center gap-2">
         <input class="w-64 rounded-md border px-3 py-2" type="text" name="recipeId" placeholder="菜谱ID (UUID)" />
@@ -129,6 +138,16 @@ export const onRequestGet = async ({ env, request }: any) => {
       </form>
       <p class="text-slate-500 text-sm mt-1">示例：names 填写 “家常菜, 汤羹”。</p>
       <div id="link-result" class="mt-2 text-sm"></div>
+    </section>
+
+    <section>
+      <h2 class="text-xl font-semibold mb-3">菜谱管理</h2>
+      <form id="delrecipe-form" class="flex items-center gap-2">
+        <input class="w-64 rounded-md border px-3 py-2" type="text" name="id" placeholder="菜谱ID (UUID)" />
+        <button class="px-3 py-2 rounded-md border bg-white hover:bg-slate-50" type="submit">删除</button>
+      </form>
+      <p class="text-slate-500 text-sm mt-1">说明：删除仅移除数据库记录；若已绑定 R2，将尝试移除图片。</p>
+      <div id="delrecipe-result" class="mt-2 text-sm"></div>
     </section>
   </main>
   <script type="module">
@@ -189,6 +208,32 @@ export const onRequestGet = async ({ env, request }: any) => {
       if(!res.ok){ box.textContent = '创建失败：' + (data?.detail || data?.error || res.status); return; }
       box.textContent = '已创建分类：' + (data?.category?.name || name);
       setTimeout(()=> location.reload(), 600);
+    });
+
+    const seedBtn = document.getElementById('seed-btn');
+    seedBtn?.addEventListener('click', async ()=>{
+      const box = document.getElementById('seed-result');
+      box.textContent = '导入中…';
+      const res = await fetch('/api/categories/seed', { method: 'POST' });
+      const data = await res.json();
+      if(!res.ok){ box.textContent = '导入失败：' + (data?.detail || data?.error || res.status); return; }
+      const n = (data?.categories||[]).length;
+      box.textContent = '已导入 ' + n + ' 个分类';
+      setTimeout(()=> location.reload(), 600);
+    });
+
+    const delForm = document.getElementById('delrecipe-form');
+    delForm?.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const fd = new FormData(delForm);
+      const id = String(fd.get('id')||'').trim();
+      const box = document.getElementById('delrecipe-result');
+      if(!id){ box.textContent = '请填写菜谱ID'; return; }
+      if(!confirm('确认删除该菜谱？其分类关联也将被删除。')){ return; }
+      const res = await fetch('/api/recipes/' + encodeURIComponent(id), { method: 'DELETE' });
+      const data = await res.json();
+      if(!res.ok){ box.textContent = '删除失败：' + (data?.detail || data?.error || res.status); return; }
+      box.textContent = '已删除';
     });
   </script>
 </body>

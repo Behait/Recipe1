@@ -72,18 +72,17 @@ export async function listRecipes(sql: any, page: number, limit: number, q?: str
 
 export async function listPopularRecipes(sql: any, page: number, limit: number, q?: string): Promise<{ items: any[]; total: number }>{
   const offset = (page - 1) * limit;
-  if (q && q.trim()) {
-    const rows = await sql`SELECT id, slug, recipe_name, description, image_url, source, created_at, hit_count, last_accessed_at FROM recipes
-                            WHERE recipe_name ILIKE ${'%' + q + '%'} OR description ILIKE ${'%' + q + '%'}
-                            ORDER BY hit_count DESC NULLS LAST, last_accessed_at DESC NULLS LAST, created_at DESC
-                            OFFSET ${offset} LIMIT ${limit}`;
-    const countRows = await sql`SELECT COUNT(*)::int AS count FROM recipes WHERE recipe_name ILIKE ${'%' + q + '%'} OR description ILIKE ${'%' + q + '%'};`;
-    return { items: rows, total: countRows[0]?.count ?? 0 };
-  }
-  const rows = await sql`SELECT id, slug, recipe_name, description, image_url, source, created_at, hit_count, last_accessed_at FROM recipes
-                         ORDER BY hit_count DESC NULLS LAST, last_accessed_at DESC NULLS LAST, created_at DESC
+  const qVal = q && q.trim() ? q.trim() : null;
+  const rows = await sql`SELECT r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at,
+                                COALESCE(SUM(s.hit_count), 0)::int AS lifetime_hits
+                         FROM recipes r
+                         LEFT JOIN recipe_hit_stats s ON s.recipe_id = r.id
+                         WHERE CASE WHEN ${qVal}::text IS NULL THEN TRUE ELSE (r.recipe_name ILIKE '%' || ${qVal} || '%' OR r.description ILIKE '%' || ${qVal} || '%') END
+                         GROUP BY r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at
+                         ORDER BY lifetime_hits DESC, r.created_at DESC
                          OFFSET ${offset} LIMIT ${limit}`;
-  const countRows = await sql`SELECT COUNT(*)::int AS count FROM recipes;`;
+  const countRows = await sql`SELECT COUNT(*)::int AS count FROM recipes
+                              WHERE CASE WHEN ${qVal}::text IS NULL THEN TRUE ELSE (recipe_name ILIKE '%' || ${qVal} || '%' OR description ILIKE '%' || ${qVal} || '%') END`;
   return { items: rows, total: countRows[0]?.count ?? 0 };
 }
 
