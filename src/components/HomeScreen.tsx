@@ -6,6 +6,7 @@ import ErrorMessage from './ErrorMessage';
 import Welcome from './Welcome';
 import RecipeOptionsList from './RecipeOptionsList';
 import RecipeOfTheDay from './RecipeOfTheDay';
+import TrendingTabs from './TrendingTabs';
 import { generateRecipeOptions, generateRecipeDetails } from '../services/geminiService';
 import type { Recipe } from '../types';
 
@@ -136,6 +137,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
               error={rotdError}
               onView={handleViewRecipeOfTheDay}
           />
+          <TrendingTabs />
         </>
       )}
     </div>

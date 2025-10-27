@@ -115,8 +115,8 @@ export const onRequestGet = async ({ params, request, env }: any) => {
       <nav class="hidden md:flex items-center gap-4 ml-auto">
         <a href="/recipes/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">Recipes</a>
         <a href="/categories/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">Categories</a>
-        <form method="GET" action="/categories/${encodedName}" class="flex items-center gap-2">
-          <input class="w-52 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2" type="text" name="q" value="${escapeHtml(q || "")}" placeholder="在该分类内搜索" />
+        <form method="GET" action="/categories/" class="flex items-center gap-2">
+          <input class="w-52 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2" type="text" name="q" value="${escapeHtml(q || "")}" placeholder="搜索常见分类（如：家常菜、川菜、素菜）" />
           <button class="inline-flex items-center px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" type="submit">搜索</button>
         </form>
       </nav>
@@ -136,8 +136,8 @@ export const onRequestGet = async ({ params, request, env }: any) => {
           <a href="/recipes/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">Recipes</a>
           <a href="/categories/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">Categories</a>
         </div>
-        <form method="GET" action="/categories/${encodedName}" class="flex items-center gap-2">
-          <input class="flex-1 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2" type="text" name="q" value="${escapeHtml(q || "")}" placeholder="在该分类内搜索" />
+        <form method="GET" action="/categories/" class="flex items-center gap-2">
+          <input class="flex-1 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2" type="text" name="q" value="${escapeHtml(q || "")}" placeholder="搜索常见分类（如：家常菜、川菜、素菜）" />
           <button class="inline-flex items-center px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" type="submit">搜索</button>
         </form>
       </div>
