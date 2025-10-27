@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { toSlug } from "../_lib/slug";
 import { uploadImage } from "../_lib/r2";
-import { getSql, upsertRecipe, logGeneration, setDailyRecommendation } from "../_lib/db";
+import { getSql, upsertRecipe, logGeneration, setDailyRecommendation, getRecipeByName, incrementRecipeHit } from "../_lib/db";
 
 // 使用字符串字面量直接定义 schema，避免动态导入和打补丁
 const recipeSchema = {
@@ -70,7 +70,35 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string, DB_CONNECTIO
         return new Response(geminiResponse.text, { headers: { 'Content-Type': 'application/json' } });
       }
       case 'generateDetails': {
-        const prompt = `为“${payload.recipeName}”生成一份详细的菜谱，使用以下部分食材：${payload.ingredients}。可以随意添加常见的厨房常备品。菜谱应包含：1. 简短诱人的描述。2. 准备时间（例如，“15分钟”）。3. 烹饪时间（例如，“25分钟”）。4. 包含所有必要食材及其用量的列表。5. 详细的制作步骤。请以中文JSON格式提供输出。`;
+        const requestedName: string = (payload.recipeName || '').trim();
+        const conn = (env as any).DB_CONNECTION_STRING;
+        // 如果数据库可用，先尝试命中缓存（按菜名唯一）
+        if (conn) {
+          try {
+            const sql = getSql(conn);
+            const existed = await getRecipeByName(sql, requestedName);
+            if (existed) {
+              const cached = {
+                id: existed.id,
+                slug: existed.slug,
+                recipeName: existed.recipe_name,
+                description: existed.description || '',
+                prepTime: existed.prep_time || '',
+                cookTime: existed.cook_time || '',
+                ingredients: existed.ingredients || [],
+                instructions: existed.instructions || [],
+                imageUrl: existed.image_url || '',
+              };
+              try { await incrementRecipeHit(sql, existed.id); } catch (e) { console.error('increment hit error (cached generateDetails):', e); }
+              return new Response(JSON.stringify(cached), { headers: { 'Content-Type': 'application/json' } });
+            }
+          } catch (e) {
+            console.error('DB cache lookup error (generateDetails):', e);
+          }
+        }
+
+        // 缓存未命中，调用 AI 生成详情
+        const prompt = `为“${requestedName}”生成一份详细的菜谱，使用以下部分食材：${payload.ingredients}。可以随意添加常见的厨房常备品。菜谱应包含：1. 简短诱人的描述。2. 准备时间（例如，“15分钟”）。3. 烹饪时间（例如，“25分钟”）。4. 包含所有必要食材及其用量的列表。5. 详细的制作步骤。请以中文JSON格式提供输出。`;
         const detailsResp = await ai.models.generateContent({
           model: "gemini-2.5-flash",
           contents: prompt,
@@ -82,18 +110,19 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string, DB_CONNECTIO
         });
         const details = JSON.parse(detailsResp.text || '{}');
 
-        // 先持久化至数据库（无图），避免因为图片失败而不入库
-        const conn = (env as any).DB_CONNECTION_STRING;
+        // 使用用户选择的菜名作为规范化名称，保证二次点击命中同名缓存
+        const canonicalName = requestedName || details.recipeName || '未命名菜谱';
+        const slug = toSlug(canonicalName);
         let up: { id: string; slug: string } | null = null;
         let imageUrl: string = '';
         let imageKey: string | null = null;
-        const slug = toSlug(details.recipeName);
+
         if (conn) {
           try {
             const sql = getSql(conn);
             up = await upsertRecipe(sql, {
               slug,
-              recipeName: details.recipeName,
+              recipeName: canonicalName,
               description: details.description,
               prepTime: details.prepTime,
               cookTime: details.cookTime,
@@ -104,11 +133,12 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string, DB_CONNECTIO
               source: 'user',
             });
             await logGeneration(sql, payload.ingredients ?? '', up.id);
+            try { await incrementRecipeHit(sql, up.id); } catch (e) { console.error('increment hit error (new generateDetails):', e); }
             // 生成图片并上传到 R2（成功则更新图片字段）
             try {
               const imageResp = await ai.models.generateImages({
                 model: 'imagen-4.0-generate-001',
-                prompt: `A professional, delicious photo of ${details.recipeName}, beautifully plated`,
+                prompt: `A professional, delicious photo of ${canonicalName}, beautifully plated`,
                 config: { numberOfImages: 1, outputMimeType: 'image/png', aspectRatio: '16:9' },
               });
               if (imageResp.generatedImages && imageResp.generatedImages.length > 0) {
@@ -118,7 +148,7 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string, DB_CONNECTIO
                 imageKey = uploaded.image_key;
                 await upsertRecipe(sql, {
                   slug,
-                  recipeName: details.recipeName,
+                  recipeName: canonicalName,
                   description: details.description,
                   prepTime: details.prepTime,
                   cookTime: details.cookTime,
@@ -142,7 +172,7 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string, DB_CONNECTIO
         const finalRecipe = {
           id: up?.id || '',
           slug: up?.slug || slug,
-          recipeName: details.recipeName,
+          recipeName: canonicalName,
           description: details.description,
           prepTime: details.prepTime,
           cookTime: details.cookTime,

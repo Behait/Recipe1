@@ -1,4 +1,4 @@
-import { getSql, listRecipes } from "./_lib/db";
+import { getSql, listRecipes, listPopularRecipes } from "./_lib/db";
 
 function escapeHtml(str: string) {
   return (str || "")
@@ -15,6 +15,7 @@ export const onRequestGet = async ({ request, env }: any) => {
     const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
     const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get("limit") || "12", 10)));
     const q = url.searchParams.get("q") || undefined;
+    const sort = (url.searchParams.get("sort") || "").toLowerCase();
 
     const conn = (env as any).DB_CONNECTION_STRING;
     if (!conn) {
@@ -22,10 +23,11 @@ export const onRequestGet = async ({ request, env }: any) => {
     }
 
     const sql = getSql(conn);
-    const { items, total } = await listRecipes(sql, page, limit, q);
+    const { items, total } = sort === 'popular' ? await listPopularRecipes(sql, page, limit, q) : await listRecipes(sql, page, limit, q);
 
-    const title = q ? `菜谱列表 - 搜索：${escapeHtml(q)}` : "菜谱列表";
-    const description = q ? `搜索关键词：${escapeHtml(q)} 的菜谱结果，共 ${total} 条` : `共 ${total} 条菜谱，可按页浏览`;
+    const titleBase = q ? `菜谱列表 - 搜索：${escapeHtml(q)}` : "菜谱列表";
+    const title = sort === 'popular' ? `${titleBase}（热门排序）` : titleBase;
+    const description = q ? `搜索关键词：${escapeHtml(q)} 的菜谱结果，共 ${total} 条` : (sort === 'popular' ? `共 ${total} 条菜谱，按热门排序（命中次数/最近访问）` : `共 ${total} 条菜谱，可按页浏览`);
 
     const listHtml = items
       .map((it) => {

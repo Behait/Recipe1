@@ -1,4 +1,4 @@
-import { getSql, getRecipeBySlug } from "../_lib/db";
+import { getSql, getRecipeBySlug, incrementRecipeHit } from "../_lib/db";
 
 function escapeHtml(str: string) {
   return (str || "")
@@ -20,6 +20,7 @@ export const onRequestGet = async ({ params, env, request }: any) => {
     const sql = getSql(conn);
     const recipe = await getRecipeBySlug(sql, slug);
     if (!recipe) return new Response("Not found", { status: 404 });
+    try { await incrementRecipeHit(sql, recipe.id); } catch (e) { console.error('increment hit error (SSR recipe detail):', e); }
 
     const url = new URL(request.url);
     const title = `${escapeHtml(recipe.recipe_name)} | 菜谱详情`;

@@ -17,7 +17,9 @@ CREATE TABLE IF NOT EXISTS public.recipes (
   image_key TEXT,
   image_url TEXT,
   source TEXT NOT NULL CHECK (source IN ('user','daily')),
-  created_at TIMESTAMPTZ DEFAULT now()
+  created_at TIMESTAMPTZ DEFAULT now(),
+  hit_count INT NOT NULL DEFAULT 0,
+  last_accessed_at TIMESTAMPTZ
 );
 
 -- Helpful indexes
@@ -48,5 +50,23 @@ CREATE TABLE IF NOT EXISTS public.generations (
 CREATE INDEX IF NOT EXISTS idx_generations_created_at ON public.generations (created_at DESC);
 
 COMMENT ON TABLE public.generations IS 'Record of user prompts and chosen recipe results.';
+
+-- Categories taxonomy
+CREATE TABLE IF NOT EXISTS public.categories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug TEXT UNIQUE NOT NULL,
+  name TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.recipe_categories (
+  recipe_id UUID NOT NULL REFERENCES public.recipes(id) ON DELETE CASCADE,
+  category_id UUID NOT NULL REFERENCES public.categories(id) ON DELETE CASCADE,
+  PRIMARY KEY (recipe_id, category_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_recipe_categories_category_id ON public.recipe_categories (category_id);
+COMMENT ON TABLE public.categories IS 'Canonical categories for recipes.';
+COMMENT ON TABLE public.recipe_categories IS 'Many-to-many mapping between recipes and categories.';
 
 COMMIT;

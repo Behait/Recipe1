@@ -1,4 +1,4 @@
-import { getSql, listRecipes } from "../_lib/db";
+import { getSql, listRecipes, listPopularRecipes } from "../_lib/db";
 
 export const onRequestGet = async ({ request, env }: any) => {
   try {
@@ -6,6 +6,7 @@ export const onRequestGet = async ({ request, env }: any) => {
     const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10));
     const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get("limit") || "10", 10)));
     const q = url.searchParams.get("q") || undefined;
+    const sort = (url.searchParams.get("sort") || "").toLowerCase();
 
     const conn = (env as any).DB_CONNECTION_STRING;
     if (!conn) {
@@ -16,10 +17,10 @@ export const onRequestGet = async ({ request, env }: any) => {
     }
 
     const sql = getSql(conn);
-    const { items, total } = await listRecipes(sql, page, limit, q);
+    const { items, total } = sort === 'popular' ? await listPopularRecipes(sql, page, limit, q) : await listRecipes(sql, page, limit, q);
 
     return new Response(
-      JSON.stringify({ items, total, page, limit, q: q ?? null }),
+      JSON.stringify({ items, total, page, limit, q: q ?? null, sort: sort || null }),
       {
         headers: {
           "Content-Type": "application/json",

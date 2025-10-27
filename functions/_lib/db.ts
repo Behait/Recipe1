@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import { toSlug } from './slug';
 
 export type RecipeInput = {
   slug: string;
@@ -50,6 +51,11 @@ export async function getRecipeBySlug(sql: any, slug: string): Promise<any | nul
   return rows[0] ?? null;
 }
 
+export async function getRecipeByName(sql: any, name: string): Promise<any | null> {
+  const rows = await sql`SELECT id, slug, recipe_name, description, prep_time, cook_time, ingredients, instructions, image_url, source, created_at FROM recipes WHERE recipe_name = ${name} LIMIT 1`;
+  return rows[0] ?? null;
+}
+
 export async function listRecipes(sql: any, page: number, limit: number, q?: string): Promise<{ items: any[]; total: number }>{
   const offset = (page - 1) * limit;
   if (q && q.trim()) {
@@ -60,6 +66,23 @@ export async function listRecipes(sql: any, page: number, limit: number, q?: str
     return { items: rows, total: countRows[0]?.count ?? 0 };
   }
   const rows = await sql`SELECT id, slug, recipe_name, description, image_url, source, created_at FROM recipes ORDER BY created_at DESC OFFSET ${offset} LIMIT ${limit}`;
+  const countRows = await sql`SELECT COUNT(*)::int AS count FROM recipes;`;
+  return { items: rows, total: countRows[0]?.count ?? 0 };
+}
+
+export async function listPopularRecipes(sql: any, page: number, limit: number, q?: string): Promise<{ items: any[]; total: number }>{
+  const offset = (page - 1) * limit;
+  if (q && q.trim()) {
+    const rows = await sql`SELECT id, slug, recipe_name, description, image_url, source, created_at, hit_count, last_accessed_at FROM recipes
+                            WHERE recipe_name ILIKE ${'%' + q + '%'} OR description ILIKE ${'%' + q + '%'}
+                            ORDER BY hit_count DESC NULLS LAST, last_accessed_at DESC NULLS LAST, created_at DESC
+                            OFFSET ${offset} LIMIT ${limit}`;
+    const countRows = await sql`SELECT COUNT(*)::int AS count FROM recipes WHERE recipe_name ILIKE ${'%' + q + '%'} OR description ILIKE ${'%' + q + '%'};`;
+    return { items: rows, total: countRows[0]?.count ?? 0 };
+  }
+  const rows = await sql`SELECT id, slug, recipe_name, description, image_url, source, created_at, hit_count, last_accessed_at FROM recipes
+                         ORDER BY hit_count DESC NULLS LAST, last_accessed_at DESC NULLS LAST, created_at DESC
+                         OFFSET ${offset} LIMIT ${limit}`;
   const countRows = await sql`SELECT COUNT(*)::int AS count FROM recipes;`;
   return { items: rows, total: countRows[0]?.count ?? 0 };
 }
@@ -79,4 +102,54 @@ export async function getDailyByDate(sql: any, dateStr: string): Promise<any | n
                          FROM daily_recommendations d JOIN recipes r ON r.id = d.recipe_id
                          WHERE d.recommend_date = ${dateStr} LIMIT 1`;
   return rows[0] ?? null;
+}
+
+export async function incrementRecipeHit(sql: any, id: string): Promise<void> {
+  await sql`UPDATE recipes SET hit_count = COALESCE(hit_count, 0) + 1, last_accessed_at = now() WHERE id = ${id}`;
+}
+
+// Categories: upsert and linking helpers
+export async function upsertCategory(sql: any, name: string): Promise<{ id: string; name: string; slug: string }>{
+  const slug = toSlug(name);
+  const rows = await sql`INSERT INTO categories (name, slug) VALUES (${name}, ${slug})
+                         ON CONFLICT (name) DO UPDATE SET slug = EXCLUDED.slug
+                         RETURNING id, name, slug`;
+  return rows[0];
+}
+
+export async function linkRecipeToCategory(sql: any, recipeId: string, categoryName: string): Promise<void> {
+  const cat = await upsertCategory(sql, categoryName);
+  await sql`INSERT INTO recipe_categories (recipe_id, category_id) VALUES (${recipeId}, ${cat.id})
+            ON CONFLICT (recipe_id, category_id) DO NOTHING`;
+}
+
+export async function listRecipesByCategoryName(sql: any, categoryName: string, page: number, limit: number, q?: string): Promise<{ items: any[]; total: number }>{
+  const offset = (page - 1) * limit;
+  const rows = await sql`SELECT r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at
+                         FROM recipe_categories rc JOIN categories c ON rc.category_id = c.id
+                           JOIN recipes r ON rc.recipe_id = r.id
+                         WHERE c.name = ${categoryName} AND (${q ? sql`(r.recipe_name ILIKE ${'%' + q + '%'} OR r.description ILIKE ${'%' + q + '%'})` : sql`TRUE`})
+                         ORDER BY r.created_at DESC OFFSET ${offset} LIMIT ${limit}`;
+  const countRows = await sql`SELECT COUNT(*)::int AS count
+                              FROM recipe_categories rc JOIN categories c ON rc.category_id = c.id
+                                JOIN recipes r ON rc.recipe_id = r.id
+                              WHERE c.name = ${categoryName} AND (${q ? sql`(r.recipe_name ILIKE ${'%' + q + '%'} OR r.description ILIKE ${'%' + q + '%'})` : sql`TRUE`})`;
+  return { items: rows, total: countRows[0]?.count ?? 0 };
+}
+
+export async function listCategoriesByRecipeId(sql: any, recipeId: string): Promise<{ id: string; name: string; slug: string }[]> {
+  const rows = await sql`SELECT c.id, c.name, c.slug
+                         FROM recipe_categories rc JOIN categories c ON rc.category_id = c.id
+                         WHERE rc.recipe_id = ${recipeId}
+                         ORDER BY c.name ASC`;
+  return rows as any[];
+}
+
+export async function listCategoriesByRecipeSlug(sql: any, slug: string): Promise<{ id: string; name: string; slug: string }[]> {
+  const rows = await sql`SELECT c.id, c.name, c.slug
+                         FROM recipe_categories rc JOIN categories c ON rc.category_id = c.id
+                         JOIN recipes r ON rc.recipe_id = r.id
+                         WHERE r.slug = ${slug}
+                         ORDER BY c.name ASC`;
+  return rows as any[];
 }
