@@ -11,7 +11,8 @@ function escapeHtml(str: string) {
 
 export const onRequestGet = async ({ params, env, request }: any) => {
   try {
-    const slug = params?.slug;
+    const rawSlug = params?.slug;
+    const slug = rawSlug ? decodeURIComponent(rawSlug) : "";
     if (!slug) return new Response("Missing slug", { status: 400 });
     const conn = (env as any).DB_CONNECTION_STRING;
     if (!conn) return new Response("DB not configured", { status: 500 });
