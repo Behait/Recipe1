@@ -1,0 +1,10 @@
+export interface Recipe {
+  id?: string;
+  recipeName: string;
+  description: string;
+  prepTime: string;
+  cookTime: string;
+  ingredients: string[];
+  instructions: string[];
+  imageUrl?: string;
+}

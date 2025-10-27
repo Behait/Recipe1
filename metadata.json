@@ -1,0 +1,5 @@
+{
+  "name": "菜谱生成器",
+  "description": "使用您手头的食材，生成创意美味的菜谱。由 Google Gemini API 驱动，为您提供智能实用的烹饪建议。",
+  "requestFramePermissions": []
+}
