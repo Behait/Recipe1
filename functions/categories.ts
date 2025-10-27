@@ -1,3 +1,5 @@
+import { getSql, listCategories } from "./_lib/db";
+
 function escapeHtml(str: string) {
   return (str || "")
     .replace(/&/g, "&amp;")
@@ -7,37 +9,37 @@ function escapeHtml(str: string) {
     .replace(/'/g, "&#39;");
 }
 
-const COMMON_CATEGORIES: string[] = [
-  "家常菜", "快手菜", "下饭菜", "素菜", "清真",
-  "汤羹", "凉菜", "热菜", "主食", "甜品",
-  "早餐", "午餐", "晚餐",
-  "低脂", "高蛋白", "儿童", "老人", "孕妇", "减脂", "增肌",
-  // 菜系
-  "川菜", "粤菜", "湘菜", "鲁菜", "浙菜", "苏菜", "闽菜", "徽菜"
-];
-
-export const onRequestGet = async ({ request }: any) => {
+export const onRequestGet = async ({ request, env }: any) => {
   try {
     const url = new URL(request.url);
     const q = (url.searchParams.get("q") || "").trim();
+    const conn = (env as any).DB_CONNECTION_STRING;
+    const sql = conn ? getSql(conn) : null;
 
-    const title = q ? `常见分类 - 搜索：${escapeHtml(q)}` : "常见分类索引";
+    const title = q ? `分类索引 - 搜索：${escapeHtml(q)}` : "分类索引";
     const description = q
-      ? `在常见分类中搜索关键词：${escapeHtml(q)}`
-      : "浏览站点常见菜谱分类，点击进入分类列表页";
+      ? `在站点分类中搜索关键词：${escapeHtml(q)}`
+      : "浏览站点已存在的菜谱分类，点击进入分类列表页";
 
-    const filtered = COMMON_CATEGORIES.filter((name) =>
-      q ? name.toLowerCase().includes(q.toLowerCase()) : true
-    );
-
-    const tagsHtml = filtered.length
-      ? filtered
-          .map((name) => {
-            const encoded = encodeURIComponent(name);
-            return `<a class="inline-flex items-center px-3 py-1.5 rounded-full border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200" href="/categories/${encoded}">${escapeHtml(name)}</a>`;
-          })
-          .join("\n")
-      : `<p class="text-slate-600 dark:text-slate-400">暂无匹配分类，请更换搜索词。</p>`;
+    let tagsHtml = `<p class="text-slate-600 dark:text-slate-400">暂无分类数据。</p>`;
+    try {
+      if (sql) {
+        const res = await listCategories(sql, 1, 200, q || undefined);
+        const items = res.items || [];
+        tagsHtml = items.length
+          ? items
+              .map((it: any) => {
+                const encoded = encodeURIComponent(it.name);
+                const label = `${escapeHtml(it.name)}${it.recipe_count ? `（${it.recipe_count}）` : ""}`;
+                return `<a class="inline-flex items-center px-3 py-1.5 rounded-full border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200" href="/categories/${encoded}">${label}</a>`;
+              })
+              .join("\n")
+          : `<p class="text-slate-600 dark:text-slate-400">暂无匹配分类，请更换搜索词。</p>`;
+      }
+    } catch (e) {
+      console.error("categories index DB error:", e);
+      tagsHtml = `<p class="text-slate-600 dark:text-slate-400">分类数据暂不可用。</p>`;
+    }
 
     const html = `<!doctype html>
 <html lang="zh">

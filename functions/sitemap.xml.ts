@@ -23,7 +23,7 @@ export const onRequestGet = async ({ env, request }: any) => {
       `${origin}/daily/${today}`,
     ];
     for (const it of recipeItems) {
-      urls.push(`${origin}/recipes/${it.slug}`);
+      urls.push(`${origin}/recipes/${it.id}`);
     }
 
     const xmlItems = urls

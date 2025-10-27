@@ -113,7 +113,7 @@ export async function incrementRecipeHit(sql: any, id: string): Promise<void> {
 
 // Categories: upsert and linking helpers
 export async function upsertCategory(sql: any, name: string): Promise<{ id: string; name: string; slug: string }>{
-  const slug = toSlug(name);
+  const slug = name; // 分类 slug 与名称保持一致（名称唯一）
   const rows = await sql`INSERT INTO categories (name, slug) VALUES (${name}, ${slug})
                          ON CONFLICT (name) DO UPDATE SET slug = EXCLUDED.slug
                          RETURNING id, name, slug`;
@@ -187,7 +187,7 @@ export async function getCategoryById(sql: any, id: string): Promise<{ id: strin
 }
 
 export async function renameCategory(sql: any, id: string, newName: string): Promise<{ id: string; name: string; slug: string }>{
-  const newSlug = toSlug(newName);
+  const newSlug = newName; // slug 直接等于名称
   const rows = await sql`UPDATE categories SET name = ${newName}, slug = ${newSlug} WHERE id = ${id} RETURNING id, name, slug`;
   return rows[0];
 }

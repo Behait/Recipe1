@@ -20,7 +20,7 @@ export const onRequestGet = async ({ env, request }: any) => {
     }
 
     const rssItems = items.map((it) => {
-      const link = `${origin}/recipes/${it.slug}`;
+      const link = `${origin}/recipes/${it.id}`;
       const pubDate = it.created_at ? new Date(it.created_at).toUTCString() : new Date().toUTCString();
       const desc = it.description || "";
       const enclosure = it.image_url ? `<enclosure url="${it.image_url}" type="image/png"/>` : "";

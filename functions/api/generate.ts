@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { toSlug } from "../_lib/slug";
 import { uploadImage } from "../_lib/r2";
-import { getSql, upsertRecipe, logGeneration, setDailyRecommendation, getRecipeByName, incrementRecipeHit } from "../_lib/db";
+import { getSql, upsertRecipe, logGeneration, setDailyRecommendation, getRecipeByName, incrementRecipeHit, linkRecipeToCategory } from "../_lib/db";
 
 // 使用字符串字面量直接定义 schema，避免动态导入和打补丁
 const recipeSchema = {
@@ -34,6 +34,24 @@ const recipeOptionsSchema = {
     },
     required: ["recipes"]
 };
+
+// 分类判定 Schema（仅一个字符串字段）
+const categorySchema = {
+  type: 'OBJECT',
+  properties: {
+    category: { type: 'STRING', description: '从给定选项中选择唯一分类名称（中文原词）' }
+  },
+  required: ['category']
+};
+
+// 允许的分类名称（与前台常见分类一致，可扩展）
+const CATEGORY_OPTIONS = [
+  "家常菜", "快手菜", "下饭菜", "素菜", "清真",
+  "汤羹", "凉菜", "热菜", "主食", "甜品",
+  "早餐", "午餐", "晚餐",
+  "低脂", "高蛋白", "儿童", "老人", "孕妇", "减脂", "增肌",
+  "川菜", "粤菜", "湘菜", "鲁菜", "浙菜", "苏菜", "闽菜", "徽菜"
+];
 
 // FIX: Add a minimal type definition for PagesFunction to satisfy TypeScript
 // when the Cloudflare global types are not available.
@@ -134,6 +152,20 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string, DB_CONNECTIO
             });
             await logGeneration(sql, payload.ingredients ?? '', up.id);
             try { await incrementRecipeHit(sql, up.id); } catch (e) { console.error('increment hit error (new generateDetails):', e); }
+            // 分类判定与关联
+            try {
+              const classifyPrompt = `请仅从以下分类选项中选择一个最匹配“${canonicalName}”的分类，输出 JSON：{ "category": "..." }。\n选项：${CATEGORY_OPTIONS.join('、')}\n如果无法判断，请选择最通用的分类“家常菜”。`;
+              const catResp = await ai.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: classifyPrompt,
+                config: { responseMimeType: "application/json", responseSchema: categorySchema, temperature: 0 }
+              });
+              const catObj = JSON.parse(catResp.text || '{}');
+              const catName = (catObj.category || '').trim() || '家常菜';
+              await linkRecipeToCategory(sql, up.id, catName);
+            } catch (e) {
+              console.error('Category classification/link failed (generateDetails):', e);
+            }
             // 生成图片并上传到 R2（成功则更新图片字段）
             try {
               const imageResp = await ai.models.generateImages({
@@ -218,6 +250,20 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string, DB_CONNECTIO
             });
             const today = new Date().toISOString().slice(0, 10);
             await setDailyRecommendation(sql, today, up.id);
+            // 分类判定与关联（今日推荐）
+            try {
+              const classifyPrompt = `请仅从以下分类选项中选择一个最匹配“${details.recipeName}”的分类，输出 JSON：{ "category": "..." }。\n选项：${CATEGORY_OPTIONS.join('、')}\n如果无法判断，请选择最通用的分类“家常菜”。`;
+              const catResp = await ai.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: classifyPrompt,
+                config: { responseMimeType: "application/json", responseSchema: categorySchema, temperature: 0 }
+              });
+              const catObj = JSON.parse(catResp.text || '{}');
+              const catName = (catObj.category || '').trim() || '家常菜';
+              await linkRecipeToCategory(sql, up.id, catName);
+            } catch (e) {
+              console.error('Category classification/link failed (generateRotd):', e);
+            }
             // 图片生成与更新
             try {
               const imageResp = await ai.models.generateImages({
