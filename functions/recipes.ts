@@ -1,4 +1,4 @@
-import { getSql, listRecipes, listPopularRecipes } from "./_lib/db";
+import { getSql, listRecipes, listPopularRecipes, listWeeklyTrendingRecipes, listRecentTrendingRecipes, listWeightedPopularRecipes } from "./_lib/db";
 
 function escapeHtml(str: string) {
   return (str || "")
@@ -23,11 +23,52 @@ export const onRequestGet = async ({ request, env }: any) => {
     }
 
     const sql = getSql(conn);
-    const { items, total } = sort === 'popular' ? await listPopularRecipes(sql, page, limit, q) : await listRecipes(sql, page, limit, q);
+    let result: { items: any[]; total: number };
+    switch (sort) {
+      case 'popular':
+        result = await listPopularRecipes(sql, page, limit, q);
+        break;
+      case 'popular_week':
+      case 'week':
+        result = await listWeeklyTrendingRecipes(sql, page, limit, q);
+        break;
+      case 'popular_recent':
+      case 'recent':
+        result = await listRecentTrendingRecipes(sql, page, limit, q);
+        break;
+      case 'weighted':
+        result = await listWeightedPopularRecipes(sql, page, limit, q);
+        break;
+      default:
+        result = await listRecipes(sql, page, limit, q);
+    }
+    const { items, total } = result;
 
     const titleBase = q ? `菜谱列表 - 搜索：${escapeHtml(q)}` : "菜谱列表";
-    const title = sort === 'popular' ? `${titleBase}（热门排序）` : titleBase;
-    const description = q ? `搜索关键词：${escapeHtml(q)} 的菜谱结果，共 ${total} 条` : (sort === 'popular' ? `共 ${total} 条菜谱，按热门排序（命中次数/最近访问）` : `共 ${total} 条菜谱，可按页浏览`);
+    let title = titleBase;
+    let description = q ? `搜索关键词：${escapeHtml(q)} 的菜谱结果，共 ${total} 条` : `共 ${total} 条菜谱，可按页浏览`;
+    if (!q) {
+      switch (sort) {
+        case 'popular':
+          title = `${titleBase}（热门排序）`;
+          description = `共 ${total} 条菜谱，按热门排序（命中次数/最近访问）`;
+          break;
+        case 'popular_week':
+        case 'week':
+          title = `${titleBase}（本周热榜）`;
+          description = `共 ${total} 条菜谱，按近7天命中聚合进行排序`;
+          break;
+        case 'popular_recent':
+        case 'recent':
+          title = `${titleBase}（近期热榜）`;
+          description = `共 ${total} 条菜谱，按近30天命中聚合进行排序`;
+          break;
+        case 'weighted':
+          title = `${titleBase}（加权热榜）`;
+          description = `应用时间衰减（近180天指数衰减）计算热度得分`;
+          break;
+      }
+    }
 
     const listHtml = items
       .map((it) => {
@@ -108,8 +149,8 @@ export const onRequestGet = async ({ request, env }: any) => {
     ${listHtml}
   </main>
   <nav class="max-w-5xl mx-auto px-4 pb-8 flex gap-2">
-    ${page > 1 ? `<a class=\"inline-flex items-center px-3 py-2 rounded-md border bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200\" href=\"/recipes/?page=${page - 1}&limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ""}\">上一页</a>` : ""}
-    ${page * limit < total ? `<a class=\"inline-flex items-center px-3 py-2 rounded-md border bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200\" href=\"/recipes/?page=${page + 1}&limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ""}\">下一页</a>` : ""}
+    ${page > 1 ? `<a class=\"inline-flex items-center px-3 py-2 rounded-md border bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200\" href=\"/recipes/?page=${page - 1}&limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ""}${sort ? `&sort=${encodeURIComponent(sort)}` : ""}\">上一页</a>` : ""}
+    ${page * limit < total ? `<a class=\"inline-flex items-center px-3 py-2 rounded-md border bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200\" href=\"/recipes/?page=${page + 1}&limit=${limit}${q ? `&q=${encodeURIComponent(q)}` : ""}${sort ? `&sort=${encodeURIComponent(sort)}` : ""}\">下一页</a>` : ""}
   </nav>
 </body>
 </html>`;

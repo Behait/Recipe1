@@ -69,4 +69,17 @@ CREATE INDEX IF NOT EXISTS idx_recipe_categories_category_id ON public.recipe_ca
 COMMENT ON TABLE public.categories IS 'Canonical categories for recipes.';
 COMMENT ON TABLE public.recipe_categories IS 'Many-to-many mapping between recipes and categories.';
 
+-- Daily hit aggregation (per recipe per day)
+CREATE TABLE IF NOT EXISTS public.recipe_hit_stats (
+  recipe_id UUID NOT NULL REFERENCES public.recipes(id) ON DELETE CASCADE,
+  hit_date DATE NOT NULL,
+  hit_count INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (recipe_id, hit_date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_recipe_hit_stats_hit_date ON public.recipe_hit_stats (hit_date);
+CREATE INDEX IF NOT EXISTS idx_recipe_hit_stats_recipe_id ON public.recipe_hit_stats (recipe_id);
+
+COMMENT ON TABLE public.recipe_hit_stats IS 'Aggregated daily hits for trending calculations.';
+
 COMMIT;

@@ -106,6 +106,10 @@ export async function getDailyByDate(sql: any, dateStr: string): Promise<any | n
 
 export async function incrementRecipeHit(sql: any, id: string): Promise<void> {
   await sql`UPDATE recipes SET hit_count = COALESCE(hit_count, 0) + 1, last_accessed_at = now() WHERE id = ${id}`;
+  await sql`INSERT INTO recipe_hit_stats (recipe_id, hit_date, hit_count)
+            VALUES (${id}, current_date, 1)
+            ON CONFLICT (recipe_id, hit_date)
+            DO UPDATE SET hit_count = recipe_hit_stats.hit_count + 1`;
 }
 
 // Categories: upsert and linking helpers
@@ -152,4 +156,90 @@ export async function listCategoriesByRecipeSlug(sql: any, slug: string): Promis
                          WHERE r.slug = ${slug}
                          ORDER BY c.name ASC`;
   return rows as any[];
+}
+
+// Categories management and queries
+export async function listCategories(sql: any, page: number, limit: number, q?: string): Promise<{ items: any[]; total: number }>{
+  const offset = (page - 1) * limit;
+  const rows = await sql`SELECT c.id, c.name, c.slug, COALESCE(COUNT(rc.recipe_id), 0)::int AS recipe_count
+                         FROM categories c
+                         LEFT JOIN recipe_categories rc ON rc.category_id = c.id
+                         WHERE ${q && q.trim() ? sql`c.name ILIKE ${'%' + q + '%'}` : sql`TRUE`}
+                         GROUP BY c.id, c.name, c.slug
+                         ORDER BY recipe_count DESC, c.name ASC
+                         OFFSET ${offset} LIMIT ${limit}`;
+  const countRows = await sql`SELECT COUNT(*)::int AS count FROM categories WHERE ${q && q.trim() ? sql`name ILIKE ${'%' + q + '%'}` : sql`TRUE`}`;
+  return { items: rows, total: countRows[0]?.count ?? 0 };
+}
+
+export async function getCategoryBySlug(sql: any, slug: string): Promise<{ id: string; name: string; slug: string } | null> {
+  const rows = await sql`SELECT id, name, slug FROM categories WHERE slug = ${slug} LIMIT 1`;
+  return rows[0] ?? null;
+}
+
+export async function getCategoryById(sql: any, id: string): Promise<{ id: string; name: string; slug: string } | null> {
+  const rows = await sql`SELECT id, name, slug FROM categories WHERE id = ${id} LIMIT 1`;
+  return rows[0] ?? null;
+}
+
+export async function renameCategory(sql: any, id: string, newName: string): Promise<{ id: string; name: string; slug: string }>{
+  const newSlug = toSlug(newName);
+  const rows = await sql`UPDATE categories SET name = ${newName}, slug = ${newSlug} WHERE id = ${id} RETURNING id, name, slug`;
+  return rows[0];
+}
+
+export async function deleteCategory(sql: any, id: string): Promise<void> {
+  await sql`DELETE FROM categories WHERE id = ${id}`;
+}
+
+export async function listRecipesByCategorySlug(sql: any, slug: string, page: number, limit: number, q?: string): Promise<{ items: any[]; total: number }>{
+  const offset = (page - 1) * limit;
+  const rows = await sql`SELECT r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at
+                         FROM recipe_categories rc JOIN categories c ON rc.category_id = c.id
+                           JOIN recipes r ON rc.recipe_id = r.id
+                         WHERE c.slug = ${slug} AND (${q ? sql`(r.recipe_name ILIKE ${'%' + q + '%'} OR r.description ILIKE ${'%' + q + '%'})` : sql`TRUE`})
+                         ORDER BY r.created_at DESC OFFSET ${offset} LIMIT ${limit}`;
+  const countRows = await sql`SELECT COUNT(*)::int AS count
+                              FROM recipe_categories rc JOIN categories c ON rc.category_id = c.id
+                                JOIN recipes r ON rc.recipe_id = r.id
+                              WHERE c.slug = ${slug} AND (${q ? sql`(r.recipe_name ILIKE ${'%' + q + '%'} OR r.description ILIKE ${'%' + q + '%'})` : sql`TRUE`})`;
+  return { items: rows, total: countRows[0]?.count ?? 0 };
+}
+
+// Trending queries: weekly, recent 30 days, and weighted decay
+export async function listTrendingByWindow(sql: any, page: number, limit: number, windowDays: number, q?: string): Promise<{ items: any[]; total: number }>{
+  const offset = (page - 1) * limit;
+  const rows = await sql`SELECT r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at,
+                                COALESCE(SUM(s.hit_count), 0)::int AS window_hits
+                         FROM recipes r
+                         LEFT JOIN recipe_hit_stats s ON s.recipe_id = r.id AND s.hit_date >= (current_date - ${windowDays})
+                         WHERE ${q && q.trim() ? sql`(r.recipe_name ILIKE ${'%' + q + '%'} OR r.description ILIKE ${'%' + q + '%'})` : sql`TRUE`}
+                         GROUP BY r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at
+                         ORDER BY window_hits DESC, r.created_at DESC
+                         OFFSET ${offset} LIMIT ${limit}`;
+  const countRows = await sql`SELECT COUNT(*)::int AS count FROM recipes WHERE ${q && q.trim() ? sql`(recipe_name ILIKE ${'%' + q + '%'} OR description ILIKE ${'%' + q + '%'})` : sql`TRUE`}`;
+  return { items: rows, total: countRows[0]?.count ?? 0 };
+}
+
+export async function listWeeklyTrendingRecipes(sql: any, page: number, limit: number, q?: string) {
+  return listTrendingByWindow(sql, page, limit, 7, q);
+}
+
+export async function listRecentTrendingRecipes(sql: any, page: number, limit: number, q?: string) {
+  return listTrendingByWindow(sql, page, limit, 30, q);
+}
+
+export async function listWeightedPopularRecipes(sql: any, page: number, limit: number, q?: string): Promise<{ items: any[]; total: number }>{
+  const offset = (page - 1) * limit;
+  // Exponential decay by days since hit_date, cutoff at 180 days for efficiency
+  const rows = await sql`SELECT r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at,
+                                COALESCE(SUM(s.hit_count * POWER(0.85, (current_date - s.hit_date))), 0) AS weighted_score
+                         FROM recipes r
+                         LEFT JOIN recipe_hit_stats s ON s.recipe_id = r.id AND s.hit_date >= (current_date - 180)
+                         WHERE ${q && q.trim() ? sql`(r.recipe_name ILIKE ${'%' + q + '%'} OR r.description ILIKE ${'%' + q + '%'})` : sql`TRUE`}
+                         GROUP BY r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at
+                         ORDER BY weighted_score DESC, r.created_at DESC
+                         OFFSET ${offset} LIMIT ${limit}`;
+  const countRows = await sql`SELECT COUNT(*)::int AS count FROM recipes WHERE ${q && q.trim() ? sql`(recipe_name ILIKE ${'%' + q + '%'} OR description ILIKE ${'%' + q + '%'})` : sql`TRUE`}`;
+  return { items: rows, total: countRows[0]?.count ?? 0 };
 }

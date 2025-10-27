@@ -6,8 +6,40 @@
 export async function onRequest(context) {
   // `next` is a function that forwards the request to the next handler
   // (either another middleware or the static asset).
-  const { next, request } = context;
+  const { next, request, env } = context;
   const url = new URL(request.url);
+
+  // Admin protection: Basic Auth for /admin and admin API writes
+  const adminUser = env?.ADMIN_USER;
+  const adminPass = env?.ADMIN_PASS;
+  const needsAdmin =
+    url.pathname.startsWith('/admin') ||
+    ((url.pathname.startsWith('/api/categories/') || url.pathname === '/api/categories') && (request.method === 'PUT' || request.method === 'DELETE')) ||
+    (url.pathname.match(/^\/api\/recipes\/[A-Za-z0-9-]+\/categories$/) && request.method !== 'GET');
+
+  if (needsAdmin) {
+    // If admin credentials are configured, enforce Basic Auth
+    if (adminUser && adminPass) {
+      const auth = request.headers.get('authorization') || '';
+      let ok = false;
+      if (auth.startsWith('Basic ')) {
+        try {
+          const decoded = atob(auth.slice(6));
+          const parts = decoded.split(':');
+          const user = parts.shift();
+          const pass = parts.join(':');
+          ok = user === adminUser && pass === adminPass;
+        } catch {}
+      }
+      if (!ok) {
+        return new Response('Authentication required', {
+          status: 401,
+          headers: { 'WWW-Authenticate': 'Basic realm="Admin"' },
+        });
+      }
+    }
+    // If not configured, allow access (dev convenience)
+  }
 
   // Let the API endpoint handle its own logic without interference.
   if (url.pathname.startsWith('/api/')) {

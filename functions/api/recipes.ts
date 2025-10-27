@@ -1,4 +1,4 @@
-import { getSql, listRecipes, listPopularRecipes } from "../_lib/db";
+import { getSql, listRecipes, listPopularRecipes, listWeeklyTrendingRecipes, listRecentTrendingRecipes, listWeightedPopularRecipes } from "../_lib/db";
 
 export const onRequestGet = async ({ request, env }: any) => {
   try {
@@ -17,7 +17,26 @@ export const onRequestGet = async ({ request, env }: any) => {
     }
 
     const sql = getSql(conn);
-    const { items, total } = sort === 'popular' ? await listPopularRecipes(sql, page, limit, q) : await listRecipes(sql, page, limit, q);
+    let result: { items: any[]; total: number };
+    switch (sort) {
+      case 'popular':
+        result = await listPopularRecipes(sql, page, limit, q);
+        break;
+      case 'popular_week':
+      case 'week':
+        result = await listWeeklyTrendingRecipes(sql, page, limit, q);
+        break;
+      case 'popular_recent':
+      case 'recent':
+        result = await listRecentTrendingRecipes(sql, page, limit, q);
+        break;
+      case 'weighted':
+        result = await listWeightedPopularRecipes(sql, page, limit, q);
+        break;
+      default:
+        result = await listRecipes(sql, page, limit, q);
+    }
+    const { items, total } = result;
 
     return new Response(
       JSON.stringify({ items, total, page, limit, q: q ?? null, sort: sort || null }),
