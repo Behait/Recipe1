@@ -96,18 +96,49 @@ export function renderHeader(opts: HeaderOptions = {}): string {
       <nav class="hidden md:flex items-center gap-4 ml-auto">
         <a href="/recipes/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">菜谱</a>
         <a href="/categories/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">分类</a>
+        <a href="/popular/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">热门</a>
+        <a href="/week/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">本周</a>
+        <a href="/recent/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">近期</a>
+        <a href="/weighted/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">加权</a>
         ${rightHtml}
       </nav>
       <div class="md:hidden ml-auto">
-        <div class="space-y-3">
-          <div class="flex gap-4">
-            <a href="/recipes/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">菜谱</a>
-            <a href="/categories/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">分类</a>
-          </div>
-          ${mobileExtraHtml}
-        </div>
+        <button id="mnav-btn" aria-label="打开菜单" class="p-2 rounded-md border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
       </div>
     </div>
+    <div id="mnav-panel" class="hidden md:hidden border-t border-slate-200 dark:border-slate-700">
+      <div class="${widthClass} mx-auto p-4 space-y-3">
+        <div class="flex flex-wrap gap-4">
+          <a href="/recipes/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">菜谱</a>
+          <a href="/categories/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">分类</a>
+          <a href="/popular/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">热门</a>
+          <a href="/week/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">本周</a>
+          <a href="/recent/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">近期</a>
+          <a href="/weighted/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">加权</a>
+        </div>
+        ${mobileExtraHtml}
+      </div>
+    </div>
+    <script>
+      (function(){
+        try {
+          const btn = document.getElementById('mnav-btn');
+          const panel = document.getElementById('mnav-panel');
+          if (btn && panel) {
+            btn.addEventListener('click', function(){
+              if (panel.classList.contains('hidden')) panel.classList.remove('hidden');
+              else panel.classList.add('hidden');
+            });
+          }
+        } catch (e) {}
+      })();
+    </script>
   </header>`;
 }
 

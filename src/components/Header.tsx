@@ -28,6 +28,10 @@ const Header: React.FC = () => {
         <nav className="hidden md:flex items-center gap-4 ml-auto">
           <a href="/recipes/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">菜谱</a>
           <a href="/categories/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">分类</a>
+          <a href="/popular/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">热门</a>
+          <a href="/week/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">本周</a>
+          <a href="/recent/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">近期</a>
+          <a href="/weighted/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">加权</a>
           <form onSubmit={handleSearch} className="flex items-center gap-2">
             <input
               type="text"
@@ -55,9 +59,13 @@ const Header: React.FC = () => {
       {open && (
         <div className="md:hidden border-t border-slate-200 dark:border-slate-700">
           <div className="container mx-auto max-w-4xl p-4 space-y-3">
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-4">
               <a href="/recipes/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">菜谱</a>
               <a href="/categories/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">分类</a>
+              <a href="/popular/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">热门</a>
+              <a href="/week/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">本周</a>
+              <a href="/recent/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">近期</a>
+              <a href="/weighted/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">加权</a>
             </div>
             <form onSubmit={handleSearch} className="flex items-center gap-2">
               <input
