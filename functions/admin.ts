@@ -1,4 +1,5 @@
 import { getSql, listCategories } from './_lib/db';
+import { renderHeader, renderFooter } from './_lib/layout';
 
 function escapeHtml(str: string) {
   return (str || '')
@@ -67,19 +68,23 @@ export const onRequestGet = async ({ env, request }: any) => {
   <script src="https://cdn.tailwindcss.com"></script>
   <style> table { width: 100%; border-collapse: collapse; } th, td { border-color: #e2e8f0; } </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
-  <header class="bg-white shadow-md">
-    <div class="max-w-5xl mx-auto p-4 flex items-center gap-4">
-      <a href="/" class="text-2xl font-bold">菜谱生成器 · 管理中心</a>
-      <nav class="ml-auto flex gap-3">
-        <a class="px-3 py-2 rounded border hover:bg-slate-50" href="/recipes/?sort=popular">热门</a>
-        <a class="px-3 py-2 rounded border hover:bg-slate-50" href="/recipes/?sort=week">本周</a>
-        <a class="px-3 py-2 rounded border hover:bg-slate-50" href="/recipes/?sort=recent">近期</a>
-        <a class="px-3 py-2 rounded border hover:bg-slate-50" href="/recipes/?sort=weighted">加权</a>
-      </nav>
-    </div>
-  </header>
-  <main class="max-w-5xl mx-auto px-4 py-6 space-y-8">
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100">
+  ${renderHeader({
+    widthClass: 'max-w-4xl',
+    rightHtml: '<nav class="ml-auto flex gap-3">\
+      <a class="px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200" href="/recipes/?sort=popular">热门</a>\
+      <a class="px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200" href="/recipes/?sort=week">本周</a>\
+      <a class="px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200" href="/recipes/?sort=recent">近期</a>\
+      <a class="px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200" href="/recipes/?sort=weighted">加权</a>\
+    </nav>',
+    mobileExtraHtml: '<div class="flex gap-2">\
+      <a class="flex-1 text-center px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200" href="/recipes/?sort=popular">热门</a>\
+      <a class="flex-1 text-center px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200" href="/recipes/?sort=week">本周</a>\
+      <a class="flex-1 text-center px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200" href="/recipes/?sort=recent">近期</a>\
+      <a class="flex-1 text-center px-3 py-2 rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200" href="/recipes/?sort=weighted">加权</a>\
+    </div>'
+  })}
+  <main class="max-w-4xl mx-auto px-4 py-6 space-y-8">
     <section>
       <h2 class="text-xl font-semibold mb-2">系统状态与指引</h2>
       <div class="p-3 rounded border bg-slate-50">
@@ -150,6 +155,7 @@ export const onRequestGet = async ({ env, request }: any) => {
       <div id="delrecipe-result" class="mt-2 text-sm"></div>
     </section>
   </main>
+  ${renderFooter({ widthClass: 'max-w-4xl' })}
   <script type="module">
     function promptNewName(oldName){
       const v = window.prompt('重命名为：', oldName || '');
