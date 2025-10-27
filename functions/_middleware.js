@@ -14,7 +14,7 @@ export async function onRequest(context) {
   const adminPass = env?.ADMIN_PASS;
   const needsAdmin =
     url.pathname.startsWith('/admin') ||
-    ((url.pathname.startsWith('/api/categories/') || url.pathname === '/api/categories') && (request.method === 'PUT' || request.method === 'DELETE')) ||
+    ((url.pathname.startsWith('/api/categories/') || url.pathname === '/api/categories') && (request.method === 'PUT' || request.method === 'DELETE' || request.method === 'POST')) ||
     (url.pathname.match(/^\/api\/recipes\/[A-Za-z0-9-]+\/categories$/) && request.method !== 'GET');
 
   if (needsAdmin) {
