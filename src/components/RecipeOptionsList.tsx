@@ -14,7 +14,7 @@ const RecipeOptionsList: React.FC<RecipeOptionsListProps> = ({ options, onSelect
         我们为您找到了几个菜谱：
       </h2>
       <div className="space-y-3">
-        {options.map((option, index) => (
+        {options.map((option) => (
           <button
             key={option.slug}
             onClick={() => onSelect(option)}
