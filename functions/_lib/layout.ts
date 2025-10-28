@@ -141,11 +141,11 @@ export function renderHeader(opts: HeaderOptions = {}): string {
 }
 
 export function renderFooter(opts: FooterOptions = {}): string {
-  const widthClass = opts.widthClass || "max-w-4xl";
+  const widthClass = opts.widthClass || "container";
   return `
-  <footer class="w-full mt-auto py-6">
-    <div class="${widthClass} mx-auto px-4 text-center text-sm text-slate-500 dark:text-slate-400">
-      <p>由 Google Gemini 驱动。您的下一道美味佳肴，只需轻轻一点。</p>
+  <footer class="w-full mt-auto py-4">
+    <div class="${widthClass} mx-auto text-center text-sm text-slate-500 dark:text-slate-400">
+      <p>由 AI菜谱生成器 驱动。您的下一道美味佳肴，只需轻轻一点。</p>
     </div>
   </footer>`;
 }

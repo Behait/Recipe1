@@ -187,7 +187,7 @@ export const onRequestGet = async ({ env, request }: any) => {
       <div id="delrecipe-result" class="mt-2 text-sm"></div>
     </section>
   </main>
-  ${renderFooter({ widthClass: 'max-w-4xl' })}
+  ${renderFooter({ widthClass: 'container' })}
   <script type="module">
     function promptNewName(oldName){
       const v = window.prompt('重命名为：', oldName || '');
@@ -276,7 +276,7 @@ export const onRequestGet = async ({ env, request }: any) => {
 
     // 事件委托，确保按钮可用（即使局部区域重绘）
     document.addEventListener('click', async (ev) => {
-      const t = ev.target as HTMLElement | null;
+      const t = ev.target;
       if (!t) return;
       const copy = t.closest('#copy-uuid');
       const fill = t.closest('#fill-del');
@@ -288,7 +288,7 @@ export const onRequestGet = async ({ env, request }: any) => {
       }
       if (fill) {
         const v = document.getElementById('uuid-val')?.textContent || '';
-        const inp = delForm?.querySelector('input[name="id"]') as HTMLInputElement | null;
+        const inp = delForm?.querySelector('input[name="id"]');
         if (inp) { inp.value = v; inp.focus(); }
         return;
       }
