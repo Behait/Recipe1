@@ -8,14 +8,18 @@ interface RecipeOptionsListProps {
 }
 
 const RecipeOptionsList: React.FC<RecipeOptionsListProps> = ({ options, onSelect, selectedOption }) => {
+  console.log('RecipeOptionsList: Rendering with selectedOption:', selectedOption);
   return (
     <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
       <h2 className="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-4">
         我们为您找到了几个菜谱：
       </h2>
       <div className="space-y-3">
-        {options.map((option) => (
-          <button
+        {options.map((option) => {
+          const isSelected = selectedOption?.slug === option.slug;
+          console.log(`RecipeOptionsList: Checking option "${option.name}". Is selected? ${isSelected}`);
+          return (
+            <button
             key={option.slug}
             onClick={() => onSelect(option)}
             className={`w-full text-left p-4 rounded-lg transition-all duration-200 block ${
