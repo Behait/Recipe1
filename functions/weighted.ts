@@ -1,4 +1,4 @@
-import { getSql, listWeightedPopularRecipes } from "./_lib/db";
+import { getSql, listWeightedPopularRecipes, listPopularRecipes, listRecipes } from "./_lib/db";
 import { renderHeader, renderFooter, renderHead } from "./_lib/layout";
 
 function escapeHtml(str: string) {
@@ -21,11 +21,30 @@ export const onRequestGet = async ({ request, env }: any) => {
     if (!conn) return new Response("DB not configured", { status: 500 });
     const sql = getSql(conn);
 
-    const { items, total } = await listWeightedPopularRecipes(sql, page, limit, q);
+    // 尝试加权热榜，失败时回退到热门或时间倒序列表
+    let items: any[] = [];
+    let total = 0;
+    try {
+      const res = await listWeightedPopularRecipes(sql, page, limit, q);
+      items = res.items || [];
+      total = res.total || 0;
+    } catch (err) {
+      console.error('weighted query error, fallback to popular:', err);
+      try {
+        const res2 = await listPopularRecipes(sql, page, limit, q);
+        items = res2.items || [];
+        total = res2.total || 0;
+      } catch (err2) {
+        console.error('popular query error, fallback to latest:', err2);
+        const res3 = await listRecipes(sql, page, limit, q);
+        items = res3.items || [];
+        total = res3.total || 0;
+      }
+    }
     const hasNext = page * limit < total;
 
     const title = q ? `加权热榜 - 搜索：${escapeHtml(q)}` : "加权热榜";
-    const description = q ? `搜索关键词 ${escapeHtml(q)} 的加权热榜` : "按访问时衰减加权的热度排行，更兼顾时效";
+    const description = q ? `搜索关键词 ${escapeHtml(q)} 的加权热榜（不可用时回退至热门/最新）` : "按访问时衰减加权的热度排行；不可用时自动回退至热门或最新";
 
     const listHtml = (items || []).map((it: any) => {
       const recipeName = escapeHtml(it.recipe_name);

@@ -33,17 +33,26 @@ export const onRequestGet = async ({ params, env, request }: any) => {
     const instructionsHtml = (recipe.instructions || [])
       .map((s: string, idx: number) => `<li><strong>步骤 ${idx + 1}：</strong> ${escapeHtml(s)}</li>`)?.join("\n") || "";
 
-    const categories = await listCategoriesByRecipeSlug(sql, slug);
-    const relatedPool: any[] = [];
-    for (const cat of categories.slice(0, 2)) {
-      const { items } = await listRecipesByCategorySlug(sql, cat.slug, 1, 8);
-      relatedPool.push(...items);
+    // 优雅降级：若分类或关联查询失败，不影响详情页呈现
+    let categories: any[] = [];
+    let related: any[] = [];
+    try {
+      categories = await listCategoriesByRecipeSlug(sql, slug);
+      const relatedPool: any[] = [];
+      for (const cat of categories.slice(0, 2)) {
+        const { items } = await listRecipesByCategorySlug(sql, cat.slug, 1, 8);
+        relatedPool.push(...items);
+      }
+      const seen: Record<string, boolean> = {};
+      related = relatedPool
+        .filter((r) => r.id !== recipe.id)
+        .filter((r) => (seen[r.id] ? false : (seen[r.id] = true)))
+        .slice(0, 6);
+    } catch (err) {
+      console.error('category/related query error (SSR recipe detail):', err);
+      categories = [];
+      related = [];
     }
-    const seen: Record<string, boolean> = {};
-    const related = relatedPool
-      .filter((r) => r.id !== recipe.id)
-      .filter((r) => (seen[r.id] ? false : (seen[r.id] = true)))
-      .slice(0, 6);
 
     const prev = await getPrevRecipeByCreatedAt(sql, recipe.created_at);
     const next = await getNextRecipeByCreatedAt(sql, recipe.created_at);

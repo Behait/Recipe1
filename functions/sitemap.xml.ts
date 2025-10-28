@@ -29,7 +29,7 @@ export const onRequestGet = async ({ env, request }: any) => {
       { loc: `${origin}/popular/`, changefreq: "daily", priority: "0.7" },
       { loc: `${origin}/week/`, changefreq: "daily", priority: "0.7" },
       { loc: `${origin}/recent/`, changefreq: "daily", priority: "0.7" },
-      { loc: `${origin}/weighted/`, changefreq: "daily", priority: "0.7" },
+      
     ];
     for (const it of recipeItems) {
       const slug = encodeURIComponent(String(it.slug || it.id));

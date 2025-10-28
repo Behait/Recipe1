@@ -31,7 +31,6 @@ const Header: React.FC = () => {
           <a href="/popular/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">热门</a>
           <a href="/week/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">本周</a>
           <a href="/recent/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">近期</a>
-          <a href="/weighted/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">加权</a>
           <form onSubmit={handleSearch} className="flex items-center gap-2">
             <input
               type="text"
@@ -65,7 +64,6 @@ const Header: React.FC = () => {
               <a href="/popular/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">热门</a>
               <a href="/week/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">本周</a>
               <a href="/recent/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">近期</a>
-              <a href="/weighted/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">加权</a>
             </div>
             <form onSubmit={handleSearch} className="flex items-center gap-2">
               <input

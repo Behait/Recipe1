@@ -99,7 +99,6 @@ export function renderHeader(opts: HeaderOptions = {}): string {
         <a href="/popular/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">热门</a>
         <a href="/week/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">本周</a>
         <a href="/recent/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">近期</a>
-        <a href="/weighted/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">加权</a>
         ${rightHtml}
       </nav>
       <div class="md:hidden ml-auto">
@@ -120,7 +119,6 @@ export function renderHeader(opts: HeaderOptions = {}): string {
           <a href="/popular/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">热门</a>
           <a href="/week/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">本周</a>
           <a href="/recent/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">近期</a>
-          <a href="/weighted/" class="text-slate-700 dark:text-slate-200 hover:text-emerald-600">加权</a>
         </div>
         ${mobileExtraHtml}
       </div>
