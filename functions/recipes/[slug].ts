@@ -229,7 +229,6 @@ export const onRequestGet = async ({ params, env, request }: any) => {
     return new Response("Internal Server Error", { status: 500 });
   }
 };
-
     const pageTitle = `${recipe.recipeName} - AI菜谱生成器`;
     const pageDescription = recipe.description.substring(0, 150);
     const pageUrl = `https://your-website.com/recipes/${recipe.slug}`;
