@@ -9,10 +9,12 @@ export const onRequestGet = async ({ request, env }: any) => {
     const sort = (url.searchParams.get("sort") || "").toLowerCase();
 
     const conn = (env as any).DB_CONNECTION_STRING;
-    if (!conn) {
-      return new Response(JSON.stringify({ error: "DB is not configured" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
+    if (!conn || conn === "placeholder") {
+      return new Response(JSON.stringify({ items: [], total: 0, page, limit, q: q ?? null, sort: sort || null }), {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "public, max-age=60",
+        },
       });
     }
 
