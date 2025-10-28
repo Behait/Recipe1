@@ -14,28 +14,27 @@ const RecipeOptionsList: React.FC<RecipeOptionsListProps> = ({ options, onSelect
         我们为您找到了几个菜谱：
       </h2>
       <div className="space-y-3">
-        {options.map((option) => {
-          const isSelected = selectedOption?.slug === option.slug;
-          return (
-            <button
-              key={option.slug}
-              onClick={() => onSelect(option)}
-              className={`w-full text-left p-4 rounded-lg transition-all duration-200 block ${
-                isSelected
-                  ? 'bg-emerald-100 dark:bg-emerald-900 ring-2 ring-emerald-500 shadow-md'
-                  : 'bg-slate-100 dark:bg-slate-700 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/50'
-              }`}
-            >
-              <p className={`font-bold text-lg ${
-                isSelected
+        {options.map((option) => (
+          <button
+            key={option.slug}
+            onClick={() => onSelect(option)}
+            className={`w-full text-left p-4 rounded-lg transition-all duration-200 block ${
+              selectedOption?.slug === option.slug
+                ? 'bg-emerald-100 dark:bg-emerald-900 ring-2 ring-emerald-500 shadow-md'
+                : 'bg-slate-100 dark:bg-slate-700 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/50'
+            }`}
+          >
+            <p
+              className={`font-bold text-lg ${
+                selectedOption?.slug === option.slug
                   ? 'text-emerald-800 dark:text-emerald-200'
                   : 'text-slate-700 dark:text-slate-300'
-              }`}>
-                {option.name}
-              </p>
-            </button>
-          );
-        })}
+              }`}
+            >
+              {option.name}
+            </p>
+          </button>
+        ))}
       </div>
     </div>
   );
