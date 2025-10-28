@@ -103,12 +103,20 @@ export async function getDailyByDate(sql: any, dateStr: string): Promise<any | n
   return rows[0] ?? null;
 }
 
-export async function incrementRecipeHit(sql: any, id: string): Promise<void> {
+export async function incrementRecipeHit(sql: any, id: string, recipeName?: string): Promise<void> {
   await sql`UPDATE recipes SET hit_count = COALESCE(hit_count, 0) + 1, last_accessed_at = now() WHERE id = ${id}`;
-  await sql`INSERT INTO recipe_hit_stats (recipe_id, hit_date, hit_count)
-            VALUES (${id}, current_date, 1)
+  
+  // 获取菜谱名称（如果没有提供）
+  let name = recipeName;
+  if (!name) {
+    const recipe = await sql`SELECT recipe_name FROM recipes WHERE id = ${id} LIMIT 1`;
+    name = recipe[0]?.recipe_name || '';
+  }
+  
+  await sql`INSERT INTO recipe_hit_stats (recipe_id, hit_date, hit_count, recipe_name, is_ai_generated)
+            VALUES (${id}, current_date, 1, ${name}, false)
             ON CONFLICT (recipe_id, hit_date)
-            DO UPDATE SET hit_count = recipe_hit_stats.hit_count + 1`;
+            DO UPDATE SET hit_count = recipe_hit_stats.hit_count + 1, recipe_name = EXCLUDED.recipe_name`;
 }
 
 // Adjacent navigation helpers for detail pages
