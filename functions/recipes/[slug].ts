@@ -39,47 +39,91 @@ export const onRequestGet = async ({ params, env, request }: any) => {
     }
     console.log('SSR /recipes/:slug begin:', slug);
     if (!slug) return new Response("Missing slug", { status: 400 });
+    
     const conn = (env as any).DB_CONNECTION_STRING;
     if (!conn) return new Response("DB not configured", { status: 500 });
-
     const sql = getSql(conn);
-    const recipe = await getRecipeBySlug(sql, slug);
-    if (!recipe) return new Response("Not found", { status: 404 });
-    try { await incrementRecipeHit(sql, recipe.id); } catch (e) { console.error('increment hit error (SSR recipe detail):', e); }
+
+    let recipe: any = await getRecipeBySlug(sql, slug);
+    let isFromAI = false;
+
+    if (!recipe) {
+      try {
+        console.log(`Recipe "${slug}" not found in DB. Generating with AI.`);
+        const ai = (env as any).AI;
+        if (!ai) return new Response("AI not configured", { status: 500 });
+
+        const GEMINI_MODEL = "@cf/google/gemini-pro";
+        const recipeName = slug.replace(/-/g, ' ');
+        const prompt = `请为我生成一个名为 "${recipeName}" 的菜谱。请提供详细的描述、准备时间、烹饪时间、食材列表（包括名称和用量）以及详细的制作步骤。请以JSON格式返回，包含以下字段：name, description, prep_time, cook_time, ingredients (一个对象数组，每个对象包含 name 和 quantity), instructions (一个字符串数组)。`;
+
+        const aiResponse = await ai.run(GEMINI_MODEL, { prompt });
+        const generatedRecipe = JSON.parse(aiResponse as string);
+        isFromAI = true;
+
+        recipe = {
+          id: 0,
+          recipe_name: generatedRecipe.name,
+          description: generatedRecipe.description,
+          ingredients: generatedRecipe.ingredients.map((i: any) => `${i.name} (${i.quantity})`),
+          instructions: generatedRecipe.instructions,
+          prep_time: generatedRecipe.prep_time,
+          cook_time: generatedRecipe.cook_time,
+          image_url: null,
+          created_at: new Date().toISOString(),
+          slug: slug,
+        };
+      } catch (aiError) {
+        console.error(`AI recipe generation failed for slug "${slug}":`, aiError);
+        return new Response(`抱歉，生成菜谱“${slug.replace(/-/g, ' ')}”时出错。`, { status: 500, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+      }
+    }
+
+    if (!recipe) {
+      return new Response("Not found", { status: 404 });
+    }
+
+    if (recipe.id > 0) {
+      try { await incrementRecipeHit(sql, recipe.id); } catch (e) { console.error('increment hit error (SSR recipe detail):', e); }
+    }
 
     const url = new URL(request.url);
     const title = `${escapeHtml(recipe.recipe_name)} - AI菜谱生成器`;
     const description = escapeHtml(recipe.description || "");
-    const img = recipe.image_url ? `<img class=\"w-full h-full object-cover\" src=\"${escapeHtml(recipe.image_url)}\" alt=\"${escapeHtml(recipe.recipe_name)}\" loading=\"eager\"/>` : "";
+    const img = recipe.image_url ? `<img class="w-full h-full object-cover" src="${escapeHtml(recipe.image_url)}" alt="${escapeHtml(recipe.recipe_name)}" loading="eager"/>` : "";
 
     const ingredientsHtml = (recipe.ingredients || [])
       .map((i: string) => `<li>${escapeHtml(i)}</li>`)?.join("\n") || "";
-    const instructionsHtml = (recipe.instructions || [])
-      .map((s: string, idx: number) => `<li><strong>步骤 ${idx + 1}：</strong> ${escapeHtml(s)}</li>`)?.join("\n") || "";
 
-    // 优雅降级：若分类或关联查询失败，不影响详情页呈现
     let categories: any[] = [];
     let related: any[] = [];
-    try {
-      categories = await listCategoriesByRecipeSlug(sql, slug);
-      const relatedPool: any[] = [];
-      for (const cat of categories.slice(0, 2)) {
-        const { items } = await listRecipesByCategorySlug(sql, cat.slug, 1, 8);
-        relatedPool.push(...items);
-      }
-      const seen: Record<string, boolean> = {};
-      related = relatedPool
-        .filter((r) => r.id !== recipe.id)
-        .filter((r) => (seen[r.id] ? false : (seen[r.id] = true)))
-        .slice(0, 6);
-    } catch (err) {
-      console.error('category/related query error (SSR recipe detail):', err);
-      categories = [];
-      related = [];
-    }
+    let prev: any = null;
+    let next: any = null;
 
-    const prev = await getPrevRecipeByCreatedAt(sql, recipe.created_at);
-    const next = await getNextRecipeByCreatedAt(sql, recipe.created_at);
+    if (!isFromAI) {
+      try {
+        categories = await listCategoriesByRecipeSlug(sql, slug);
+        const relatedPool: any[] = [];
+        for (const cat of categories.slice(0, 2)) {
+          const { items } = await listRecipesByCategorySlug(sql, cat.slug, 1, 8);
+          relatedPool.push(...items);
+        }
+        const seen: Record<string, boolean> = {};
+        related = relatedPool
+          .filter((r) => r.id !== recipe.id)
+          .filter((r) => (seen[r.id] ? false : (seen[r.id] = true)))
+          .slice(0, 6);
+        
+        prev = await getPrevRecipeByCreatedAt(sql, recipe.created_at);
+        next = await getNextRecipeByCreatedAt(sql, recipe.created_at);
+      } catch (err) {
+        console.error('category/related/prev/next query error (SSR recipe detail):', err);
+        categories = [];
+        related = [];
+        prev = null;
+        next = null;
+      }
+    }
 
     const jsonLd = {
       "@context": "https://schema.org",
@@ -122,8 +166,8 @@ export const onRequestGet = async ({ params, env, request }: any) => {
     locale: "zh_CN",
     alternates: { rss: "/rss.xml" }
   })}
-  <script type="application/ld+json">${escapeHtml(JSON.stringify(jsonLd))}</script>
-  <script type="application/ld+json">${escapeHtml(JSON.stringify(breadcrumbLd))}</script>
+  <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+  <script type="application/ld+json">${JSON.stringify(breadcrumbLd)}</script>
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100">
   ${renderHeader({
@@ -205,10 +249,10 @@ export const onRequestGet = async ({ params, env, request }: any) => {
         ` : ''}
         <section class="mt-8 flex items-center justify-between">
           <div>
-            ${prev ? `<a class=\"text-emerald-600 hover:underline\" href=\"/recipes/${escapeHtml(prev.slug)}\">← 上一篇：${escapeHtml(prev.recipe_name)}<\/a>` : '<span class="text-slate-400">已是最新</span>'}
+            ${prev ? `<a class="text-emerald-600 hover:underline" href="/recipes/${escapeHtml(prev.slug)}">← 上一篇：${escapeHtml(prev.recipe_name)}</a>` : ''}
           </div>
           <div>
-            ${next ? `<a class=\"text-emerald-600 hover:underline\" href=\"/recipes/${escapeHtml(next.slug)}\">下一篇：${escapeHtml(next.recipe_name)} →<\/a>` : '<span class="text-slate-400">已是最早</span>'}
+            ${next ? `<a class="text-emerald-600 hover:underline" href="/recipes/${escapeHtml(next.slug)}">下一篇：${escapeHtml(next.recipe_name)} →</a>` : ''}
           </div>
         </section>
       </div>

@@ -1,4 +1,14 @@
-import type { Recipe } from '../types';
+import type { Recipe, RecipeOption } from '../types';
+
+// 辅助函数，用于将字符串转换为URL友好的slug
+function slugify(text: string): string {
+  return text.toString().toLowerCase()
+    .replace(/\s+/g, '-')       // Replace spaces with -
+    .replace(/[^\w\-]+/g, '')   // Remove all non-word chars
+    .replace(/\-\-+/g, '-')     // Replace multiple - with single -
+    .replace(/^-+/, '')          // Trim - from start of text
+    .replace(/-+$/, '');         // Trim - from end of text
+}
 
 // 辅助函数，用于调用我们的后端代理
 async function callApi<T>(type: string, payload: object): Promise<T> {
@@ -25,10 +35,10 @@ async function callApi<T>(type: string, payload: object): Promise<T> {
 }
 
 // 生成图片逻辑已经在后端完成，这里不再单独调用生成图片
-export async function generateRecipeOptions(ingredients: string): Promise<string[]> {
+export async function generateRecipeOptions(ingredients: string): Promise<RecipeOption[]> {
   const data = await callApi<{ recipes: string[] }>('generateOptions', { ingredients });
   if (data && Array.isArray(data.recipes)) {
-    return data.recipes;
+    return data.recipes.map(name => ({ name, slug: slugify(name) }));
   }
   throw new Error("未能从API获取有效的菜谱选项。");
 }

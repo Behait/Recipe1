@@ -28,8 +28,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
   rotdError
 }) => {
   const [ingredients, setIngredients] = useState('');
-  const [recipeOptions, setRecipeOptions] = useState<string[]>([]);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [recipeOptions, setRecipeOptions] = useState<RecipeOption[]>([]);
+  const [selectedOption, setSelectedOption] = useState<RecipeOption | null>(null);
   const [isGeneratingOptions, setIsGeneratingOptions] = useState(false);
   const [isGeneratingDetails, setIsGeneratingDetails] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,22 +56,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
     }
   };
 
-  const handleSelectRecipeOption = async (recipeName: string) => {
-    setSelectedOption(recipeName);
-    setIsGeneratingDetails(true);
-    setError(null);
-    setRetryAction(null);
-    setCurrentRecipe(null);
-    
-    try {
-      const recipeDetails = await generateRecipeDetails(recipeName, ingredients);
-      setCurrentRecipe(recipeDetails);
-    } catch (e: any) {
-      setError(e.message || `获取“${recipeName}”的详细信息时发生未知错误。`);
-      setRetryAction(() => () => handleSelectRecipeOption(recipeName));
-    } finally {
-      setIsGeneratingDetails(false);
-    }
+  const handleSelectRecipeOption = async (option: RecipeOption) => {
+    // No longer needed for navigation, but kept for potential future use
   };
   
   const handleStartOver = () => {
