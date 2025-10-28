@@ -1,13 +1,28 @@
 import type { Recipe, RecipeOption } from '../types';
 
-// 辅助函数，用于将字符串转换为URL友好的slug
+// 辅助函数：将字符串转换为 URL 友好的 slug（支持中文/Unicode）
 function slugify(text: string): string {
-  return text.toString().toLowerCase()
-    .replace(/\s+/g, '-')       // Replace spaces with -
-    .replace(/[^\w\-]+/g, '')   // Remove all non-word chars
-    .replace(/\-\-+/g, '-')     // Replace multiple - with single -
-    .replace(/^-+/, '')          // Trim - from start of text
-    .replace(/-+$/, '');         // Trim - from end of text
+  // 保留所有字母、数字以及连字符，使用 Unicode 属性匹配（需要 /u 标志）
+  const cleaned = text
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    // 仅移除除字母数字和连字符外的符号，保留中文等 Unicode 字符
+    .replace(/[^\p{L}\p{N}-]+/gu, '')
+    .replace(/-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+
+  // 如果清理后为空（例如全是符号或极端情况），用 encodeURIComponent 作为回退
+  if (!cleaned) {
+    return encodeURIComponent(text)
+      .toLowerCase()
+      .replace(/%/g, '')
+      .replace(/-+/g, '-')
+      .slice(0, 60); // 控制长度，避免过长
+  }
+  return cleaned;
 }
 
 // 辅助函数，用于调用我们的后端代理
