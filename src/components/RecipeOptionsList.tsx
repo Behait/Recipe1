@@ -17,12 +17,9 @@ const RecipeOptionsList: React.FC<RecipeOptionsListProps> = ({ options, onSelect
         {options.map((option) => {
           const isSelected = selectedOption?.slug === option.slug;
           return (
-            <a
+            <button
               key={option.slug}
-              href={`/recipes/${option.slug}`}
-              onClick={(e) => {
-                onSelect(option);
-              }}
+              onClick={() => onSelect(option)}
               className={`w-full text-left p-4 rounded-lg transition-all duration-200 block ${
                 isSelected
                   ? 'bg-emerald-100 dark:bg-emerald-900 ring-2 ring-emerald-500 shadow-md'
@@ -36,7 +33,7 @@ const RecipeOptionsList: React.FC<RecipeOptionsListProps> = ({ options, onSelect
               }`}>
                 {option.name}
               </p>
-            </a>
+            </button>
           );
         })}
       </div>

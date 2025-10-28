@@ -57,7 +57,21 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   const handleSelectRecipeOption = async (option: RecipeOption) => {
-    // No longer needed for navigation, but kept for potential future use
+    setSelectedOption(option);
+    setIsGeneratingDetails(true);
+    setError(null);
+    setRetryAction(null);
+    setCurrentRecipe(null);
+
+    try {
+      const details = await generateRecipeDetails(option.name, ingredients);
+      setCurrentRecipe(details);
+    } catch (e: any) {
+      setError(e.message || '生成菜谱详情时发生未知错误。');
+      setRetryAction(() => () => handleSelectRecipeOption(option));
+    } finally {
+      setIsGeneratingDetails(false);
+    }
   };
   
   const handleStartOver = () => {
