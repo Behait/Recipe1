@@ -71,11 +71,17 @@ COMMENT ON TABLE public.recipe_categories IS 'Many-to-many mapping between recip
 
 -- Daily hit aggregation (per recipe per day)
 CREATE TABLE IF NOT EXISTS public.recipe_hit_stats (
-  recipe_id UUID NOT NULL REFERENCES public.recipes(id) ON DELETE CASCADE,
+  recipe_id UUID NOT NULL,
   hit_date DATE NOT NULL,
   hit_count INT NOT NULL DEFAULT 0,
+  recipe_name TEXT,
+  is_ai_generated BOOLEAN DEFAULT false,
   PRIMARY KEY (recipe_id, hit_date)
 );
+
+-- 为数据库菜谱添加外键约束（仅对非AI生成的菜谱）
+-- 注意：这里使用条件约束，只对is_ai_generated=false的记录应用外键约束
+-- 但PostgreSQL不支持条件外键，所以我们移除外键约束，改为应用层处理
 
 CREATE INDEX IF NOT EXISTS idx_recipe_hit_stats_hit_date ON public.recipe_hit_stats (hit_date);
 CREATE INDEX IF NOT EXISTS idx_recipe_hit_stats_recipe_id ON public.recipe_hit_stats (recipe_id);

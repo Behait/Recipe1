@@ -76,7 +76,7 @@ export async function listPopularRecipes(sql: any, page: number, limit: number, 
   const rows = await sql`SELECT r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at,
                                 COALESCE(SUM(s.hit_count), 0)::int AS lifetime_hits
                          FROM recipes r
-                         LEFT JOIN recipe_hit_stats s ON s.recipe_id = r.id
+                         LEFT JOIN recipe_hit_stats s ON s.recipe_id = r.id AND s.is_ai_generated = false
                          WHERE CASE WHEN ${qVal}::text IS NULL THEN TRUE ELSE (r.recipe_name ILIKE '%' || ${qVal} || '%' OR r.description ILIKE '%' || ${qVal} || '%') END
                          GROUP BY r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at
                          ORDER BY lifetime_hits DESC, r.created_at DESC
@@ -259,7 +259,7 @@ export async function listTrendingByWindow(sql: any, page: number, limit: number
   const rows = await sql`SELECT r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at,
                                 COALESCE(SUM(s.hit_count), 0)::int AS window_hits
                          FROM recipes r
-                         LEFT JOIN recipe_hit_stats s ON s.recipe_id = r.id AND s.hit_date >= (current_date - ${windowDays}::int)
+                         LEFT JOIN recipe_hit_stats s ON s.recipe_id = r.id AND s.hit_date >= (current_date - ${windowDays}::int) AND s.is_ai_generated = false
                          WHERE CASE WHEN ${qVal}::text IS NULL THEN TRUE ELSE (r.recipe_name ILIKE '%' || ${qVal} || '%' OR r.description ILIKE '%' || ${qVal} || '%') END
                          GROUP BY r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at
                          ORDER BY window_hits DESC, r.created_at DESC
@@ -283,7 +283,7 @@ export async function listWeightedPopularRecipes(sql: any, page: number, limit: 
   const rows = await sql`SELECT r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at,
                                 COALESCE(SUM(s.hit_count * POWER(0.85, (current_date - s.hit_date))), 0) AS weighted_score
                          FROM recipes r
-                         LEFT JOIN recipe_hit_stats s ON s.recipe_id = r.id AND s.hit_date >= (current_date - 180)
+                         LEFT JOIN recipe_hit_stats s ON s.recipe_id = r.id AND s.hit_date >= (current_date - 180) AND s.is_ai_generated = false
                          WHERE ${q && q.trim() ? sql`(r.recipe_name ILIKE ${'%' + q + '%'} OR r.description ILIKE ${'%' + q + '%'})` : sql`TRUE`}
                          GROUP BY r.id, r.slug, r.recipe_name, r.description, r.image_url, r.source, r.created_at
                          ORDER BY weighted_score DESC, r.created_at DESC

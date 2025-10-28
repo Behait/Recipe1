@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import type { Recipe } from '../types';
 
 interface RecipeDisplayProps {
@@ -7,8 +7,40 @@ interface RecipeDisplayProps {
   onStartOver: () => void;
 }
 
+// 记录菜谱查看统计
+const recordRecipeView = async (recipe: Recipe) => {
+  try {
+    // 判断是否为AI生成的菜谱（没有ID的菜谱通常是AI生成的）
+    const isAiGenerated = !recipe.id;
+    
+    // 只有当菜谱有 ID、slug 或者是AI生成的菜谱时才记录统计
+    if (recipe.id || recipe.slug || isAiGenerated) {
+      await fetch('/api/recipes/hit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipeId: recipe.id,
+          slug: recipe.slug,
+          recipeName: recipe.name,
+          isAiGenerated: isAiGenerated,
+        }),
+      });
+    }
+  } catch (error) {
+    console.error('记录菜谱查看统计失败:', error);
+    // 静默失败，不影响用户体验
+  }
+};
+
 const RecipeDisplay: React.FC<RecipeDisplayProps> = ({ recipe, onSave, onStartOver }) => {
   const isSaved = !!recipe.id;
+
+  // 当组件挂载时记录统计
+  useEffect(() => {
+    recordRecipeView(recipe);
+  }, [recipe.id, recipe.slug]); // 依赖于 recipe.id 和 recipe.slug
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg animate-fade-in-fast overflow-hidden">
