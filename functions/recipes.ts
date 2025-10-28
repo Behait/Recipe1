@@ -78,10 +78,35 @@ export const onRequestGet = async ({ request, env }: any) => {
         const img = it.image_url 
           ? `<img class=\"w-full h-40 object-cover\" src=\"${escapeHtml(it.image_url)}\" alt=\"${name}\" loading=\"lazy\"/>` 
           : `<div class=\"w-full h-40 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center\">\
-               <svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-16 w-16 text-slate-400 dark:text-slate-500\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\">\
-                 <path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\" d=\"M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253\" />\
-               </svg>\
-             </div>`;
+             <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 300\" class=\"w-20 h-16\">\
+               <defs>\
+                 <linearGradient id=\"bg-recipes\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\">\
+                   <stop offset=\"0%\" style=\"stop-color:#f1f5f9;stop-opacity:1\" />\
+                   <stop offset=\"100%\" style=\"stop-color:#e2e8f0;stop-opacity:1\" />\
+                 </linearGradient>\
+               </defs>\
+               <rect width=\"400\" height=\"300\" fill=\"url(#bg-recipes)\"/>\
+               <g transform=\"translate(200,150)\">\
+                 <ellipse cx=\"0\" cy=\"-20\" rx=\"45\" ry=\"15\" fill=\"#64748b\" opacity=\"0.3\"/>\
+                 <path d=\"M -35,-35 Q -35,-55 -20,-60 Q -10,-65 0,-65 Q 10,-65 20,-60 Q 35,-55 35,-35 L 35,-20 Q 35,-15 30,-15 L -30,-15 Q -35,-15 -35,-20 Z\" fill=\"#64748b\" opacity=\"0.4\"/>\
+                 <g transform=\"translate(-60,20)\">\
+                   <rect x=\"-2\" y=\"0\" width=\"4\" height=\"40\" fill=\"#64748b\" opacity=\"0.3\"/>\
+                   <rect x=\"-8\" y=\"-5\" width=\"4\" height=\"15\" fill=\"#64748b\" opacity=\"0.3\"/>\
+                   <rect x=\"-2\" y=\"-5\" width=\"4\" height=\"15\" fill=\"#64748b\" opacity=\"0.3\"/>\
+                   <rect x=\"4\" y=\"-5\" width=\"4\" height=\"15\" fill=\"#64748b\" opacity=\"0.3\"/>\
+                 </g>\
+                 <g transform=\"translate(60,20)\">\
+                   <rect x=\"-2\" y=\"0\" width=\"4\" height=\"35\" fill=\"#64748b\" opacity=\"0.3\"/>\
+                   <ellipse cx=\"0\" cy=\"-8\" rx=\"8\" ry=\"12\" fill=\"#64748b\" opacity=\"0.3\"/>\
+                 </g>\
+               </g>\
+               <circle cx=\"80\" cy=\"80\" r=\"3\" fill=\"#10b981\" opacity=\"0.2\"/>\
+               <circle cx=\"320\" cy=\"220\" r=\"4\" fill=\"#10b981\" opacity=\"0.2\"/>\
+               <circle cx=\"350\" cy=\"100\" r=\"2\" fill=\"#10b981\" opacity=\"0.2\"/>\
+               <circle cx=\"50\" cy=\"250\" r=\"3\" fill=\"#10b981\" opacity=\"0.2\"/>\
+               <text x=\"200\" y=\"220\" text-anchor=\"middle\" font-family=\"system-ui, sans-serif\" font-size=\"16\" fill=\"#64748b\" opacity=\"0.5\">美味菜谱</text>\
+             </svg>\
+           </div>`;
         const slug = escapeHtml(it.slug || String(it.id));
         return `<article class=\"rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden\">\n          <a href=\"/recipes/${slug}\" class=\"block\">${img}</a>\n          <div class=\"p-3 space-y-2\">\n            <h2 class=\"text-lg font-semibold\"><a class=\"hover:text-indigo-600\" href=\"/recipes/${slug}\">${name}</a></h2>\n            <p class=\"text-slate-600 dark:text-slate-400 line-clamp-3\">${desc}</p>\n          </div>\n        </article>`;
       })
