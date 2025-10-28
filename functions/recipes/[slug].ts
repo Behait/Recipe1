@@ -162,6 +162,14 @@ export const onRequestGet = async ({ params, env, request }: any) => {
             </ol>
           </div>
         </section>
+        ${(categories && categories.length) ? `
+        <section class="mt-10">
+          <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-4">相关分类</h2>
+          <div class="flex flex-wrap gap-2">
+            ${categories.map((c: any) => `<a class="inline-block rounded-md border border-slate-300 dark:border-slate-600 px-2 py-1" href="/categories/${encodeURIComponent(c.slug)}">${escapeHtml(c.name)}</a>`).join('')}
+          </div>
+        </section>
+        ` : ''}
         ${(related && related.length) ? `
         <section class="mt-10">
           <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-4">你可能还喜欢</h2>

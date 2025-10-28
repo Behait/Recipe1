@@ -136,7 +136,7 @@ export const onRequestGet = async ({ params, env, request }: any) => {
     </form>',
   })}
   <main class="mx-auto max-w-4xl px-4 py-6">
-    <article class="grid grid-cols-1 md:grid-cols-[1fr_360px] gap-6">
+    <article class="space-y-6">
       <section class="rounded-md overflow-hidden bg-white dark:bg-slate-800 shadow">
         <div class="h-64 bg-slate-100 dark:bg-slate-700">${img}</div>
         <div class="p-4">
@@ -152,20 +152,20 @@ export const onRequestGet = async ({ params, env, request }: any) => {
           <ol class="list-decimal pl-5 space-y-2">${instructionsHtml}</ol>
         </div>
       </section>
-      <aside class="space-y-6">
-        ${(categories && categories.length) ? `<section class="bg-white dark:bg-slate-800 rounded-md shadow p-4">
-          <h3 class="text-lg font-semibold mb-2">相关分类</h3>
-          <div class="flex flex-wrap gap-2">
-            ${categories.map((c: any) => `<a class="inline-block rounded-md border border-slate-300 dark:border-slate-600 px-2 py-1" href="/categories/${encodeURIComponent(c.slug)}">${escapeHtml(c.name)}</a>`).join('')}
-          </div>
-        </section>` : ''}
-        ${(related && related.length) ? `<section class="bg-white dark:bg-slate-800 rounded-md shadow p-4">
-          <h3 class="text-lg font-semibold mb-2">相关推荐</h3>
-          <ul class="space-y-2">
-            ${related.map((r: any) => `<li><a class="text-blue-600 dark:text-blue-400 hover:underline" href="/recipes/${encodeURIComponent(r.slug)}">${escapeHtml(r.recipe_name)}</a></li>`).join('')}
-          </ul>
-        </section>` : ''}
-      </aside>
+
+      ${(categories && categories.length) ? `<section class="bg-white dark:bg-slate-800 rounded-md shadow p-4">
+        <h3 class="text-lg font-semibold mb-2">相关分类</h3>
+        <div class="flex flex-wrap gap-2">
+          ${categories.map((c: any) => `<a class="inline-block rounded-md border border-slate-300 dark:border-slate-600 px-2 py-1" href="/categories/${encodeURIComponent(c.slug)}">${escapeHtml(c.name)}</a>`).join('')}
+        </div>
+      </section>` : ''}
+
+      ${(related && related.length) ? `<section class="bg-white dark:bg-slate-800 rounded-md shadow p-4">
+        <h3 class="text-lg font-semibold mb-2">相关推荐</h3>
+        <ul class="space-y-2">
+          ${related.map((r: any) => `<li><a class="text-blue-600 dark:text-blue-400 hover:underline" href="/recipes/${encodeURIComponent(r.slug)}">${escapeHtml(r.recipe_name)}</a></li>`).join('')}
+        </ul>
+      </section>` : ''}
     </article>
 
     <nav class="mt-8 flex items-center justify-between">
