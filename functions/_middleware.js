@@ -47,8 +47,14 @@ export async function onRequest(context) {
     return await next();
   }
   
-  // Get the original response for the static asset.
-  const response = await next();
+  // Get the original response for the static asset, with error logging.
+  let response;
+  try {
+    response = await next();
+  } catch (err) {
+    console.error('Middleware next() error:', err);
+    return new Response('Internal Server Error', { status: 500 });
+  }
 
   // Check if the requested file is a .ts or .tsx file.
   if (url.pathname.endsWith('.ts') || url.pathname.endsWith('.tsx')) {

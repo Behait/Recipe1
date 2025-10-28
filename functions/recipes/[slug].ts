@@ -13,7 +13,14 @@ function escapeHtml(str: string) {
 export const onRequestGet = async ({ params, env, request }: any) => {
   try {
     const rawSlug = params?.slug;
-    const slug = rawSlug ? decodeURIComponent(rawSlug) : "";
+    let slug = "";
+    try {
+      slug = rawSlug ? decodeURIComponent(rawSlug) : "";
+    } catch (deErr) {
+      console.error('decode slug error:', deErr, 'raw=', rawSlug);
+      slug = rawSlug || "";
+    }
+    console.log('SSR /recipes/:slug begin:', slug);
     if (!slug) return new Response("Missing slug", { status: 400 });
     const conn = (env as any).DB_CONNECTION_STRING;
     if (!conn) return new Response("DB not configured", { status: 500 });
