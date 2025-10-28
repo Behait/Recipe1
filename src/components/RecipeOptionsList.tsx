@@ -1,9 +1,10 @@
 import React from 'react';
+import { RecipeOption } from '../types';
 
 interface RecipeOptionsListProps {
-  options: string[];
-  onSelect: (option: string) => void;
-  selectedOption: string | null;
+  options: RecipeOption[];
+  onSelect: (option: RecipeOption) => void;
+  selectedOption: RecipeOption | null;
 }
 
 const RecipeOptionsList: React.FC<RecipeOptionsListProps> = ({ options, onSelect, selectedOption }) => {
@@ -14,8 +15,8 @@ const RecipeOptionsList: React.FC<RecipeOptionsListProps> = ({ options, onSelect
         </h2>
         <div className="space-y-3">
             {options.map((option, index) => {
-                const isSelected = option === selectedOption;
-                const buttonClasses = `w-full text-left p-4 rounded-lg transition-all duration-200 group ${
+                const isSelected = option.name === selectedOption?.name;
+                const linkClasses = `w-full text-left p-4 rounded-lg transition-all duration-200 group ${
                     isSelected
                       ? 'bg-emerald-100 dark:bg-emerald-900 ring-2 ring-emerald-500 shadow-md cursor-default'
                       : 'bg-slate-100 dark:bg-slate-700 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/50 hover:shadow-sm'
@@ -27,13 +28,17 @@ const RecipeOptionsList: React.FC<RecipeOptionsListProps> = ({ options, onSelect
                 }`;
 
                 return (
-                    <button
+                    <a
                         key={index}
-                        onClick={() => onSelect(option)}
-                        className={buttonClasses}
+                        href={`/recipes/${option.slug}`}
+                        onClick={(e) => {
+                            e.preventDefault(); // 阻止默认的链接跳转行为
+                            onSelect(option);
+                        }}
+                        className={linkClasses}
                     >
-                        <p className={textClasses}>{option}</p>
-                    </button>
+                        <p className={textClasses}>{option.name}</p>
+                    </a>
                 );
             })}
         </div>

@@ -10,6 +10,23 @@ function escapeHtml(str: string) {
     .replace(/'/g, "&#39;");
 }
 
+function formatDuration(prepTime: string, cookTime: string): string {
+  const parseTime = (timeStr: string): number => {
+    const match = timeStr.match(/(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  };
+
+  const prepMinutes = parseTime(prepTime);
+  const cookMinutes = parseTime(cookTime);
+  const totalMinutes = prepMinutes + cookMinutes;
+
+  if (totalMinutes === 0) {
+    return "PT0M";
+  }
+
+  return `PT${totalMinutes}M`;
+}
+
 export const onRequestGet = async ({ params, env, request }: any) => {
   try {
     const rawSlug = params?.slug;
@@ -31,7 +48,7 @@ export const onRequestGet = async ({ params, env, request }: any) => {
     try { await incrementRecipeHit(sql, recipe.id); } catch (e) { console.error('increment hit error (SSR recipe detail):', e); }
 
     const url = new URL(request.url);
-    const title = `${escapeHtml(recipe.recipe_name)} | 菜谱详情`;
+    const title = `${escapeHtml(recipe.recipe_name)} - AI菜谱生成器`;
     const description = escapeHtml(recipe.description || "");
     const img = recipe.image_url ? `<img class=\"w-full h-full object-cover\" src=\"${escapeHtml(recipe.image_url)}\" alt=\"${escapeHtml(recipe.recipe_name)}\" loading=\"eager\"/>` : "";
 
@@ -72,7 +89,7 @@ export const onRequestGet = async ({ params, env, request }: any) => {
       "image": recipe.image_url || undefined,
       "recipeIngredient": recipe.ingredients || [],
       "recipeInstructions": (recipe.instructions || []).map((txt: string) => ({ "@type": "HowToStep", text: txt })),
-      "totalTime": `${recipe.prep_time} + ${recipe.cook_time}`,
+      "totalTime": formatDuration(recipe.prep_time, recipe.cook_time),
       "datePublished": recipe.created_at || undefined,
       "dateModified": recipe.created_at || undefined,
       "author": { "@type": "Organization", "name": "AI 菜谱" },

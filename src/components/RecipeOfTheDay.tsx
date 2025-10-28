@@ -5,10 +5,9 @@ interface RecipeOfTheDayProps {
   recipe: Recipe | null;
   isLoading: boolean;
   error: string | null;
-  onView: () => void;
 }
 
-const RecipeOfTheDay: React.FC<RecipeOfTheDayProps> = ({ recipe, isLoading, error, onView }) => {
+const RecipeOfTheDay: React.FC<RecipeOfTheDayProps> = ({ recipe, isLoading, error }) => {
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -33,12 +32,12 @@ const RecipeOfTheDay: React.FC<RecipeOfTheDayProps> = ({ recipe, isLoading, erro
           )}
           <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-500 mb-2">{recipe.recipeName}</h3>
           <p className="text-slate-600 dark:text-slate-400 mb-4">{recipe.description}</p>
-          <button
-            onClick={onView}
+          <a
+            href={`/recipes/${recipe.slug}`}
             className="bg-emerald-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-50 dark:focus:ring-offset-slate-800 focus:ring-emerald-500 transition-all duration-300"
           >
             查看详情
-          </button>
+          </a>
         </div>
       );
     }
