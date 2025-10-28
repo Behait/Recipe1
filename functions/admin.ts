@@ -274,29 +274,36 @@ export const onRequestGet = async ({ env, request }: any) => {
       box.textContent = '已删除';
     });
 
-    const copyBtn = document.getElementById('copy-uuid');
-    copyBtn?.addEventListener('click', async ()=>{
-      const t = document.getElementById('uuid-val')?.textContent || '';
-      try { await navigator.clipboard.writeText(t); alert('UUID 已复制'); } catch { alert('复制失败，请手动选择复制'); }
-    });
-    const fillBtn = document.getElementById('fill-del');
-    fillBtn?.addEventListener('click', ()=>{
-      const t = document.getElementById('uuid-val')?.textContent || '';
-      const inp = delForm?.querySelector('input[name="id"]') as HTMLInputElement | null;
-      if(inp){ inp.value = t; inp.focus(); }
-    });
-
-    const delFoundBtn = document.getElementById('delete-found');
-    delFoundBtn?.addEventListener('click', async ()=>{
-      const id = (document.getElementById('uuid-val')?.textContent || '').trim();
-      if(!id){ alert('未找到待删除的 UUID'); return; }
-      if(!confirm('确认删除该菜谱？其分类关联也将被删除。')) return;
-      const res = await fetch('/api/recipes/' + encodeURIComponent(id), { method: 'DELETE' });
-      let msg = '';
-      try { const data = await res.json(); msg = data?.detail || data?.error || ''; } catch {}
-      if(!res.ok){ alert('删除失败：' + (msg || res.status)); return; }
-      alert('已删除');
-      location.reload();
+    // 事件委托，确保按钮可用（即使局部区域重绘）
+    document.addEventListener('click', async (ev) => {
+      const t = ev.target as HTMLElement | null;
+      if (!t) return;
+      const copy = t.closest('#copy-uuid');
+      const fill = t.closest('#fill-del');
+      const del = t.closest('#delete-found');
+      if (copy) {
+        const v = document.getElementById('uuid-val')?.textContent || '';
+        try { await navigator.clipboard.writeText(v); alert('UUID 已复制'); } catch { alert('复制失败，请手动选择复制'); }
+        return;
+      }
+      if (fill) {
+        const v = document.getElementById('uuid-val')?.textContent || '';
+        const inp = delForm?.querySelector('input[name="id"]') as HTMLInputElement | null;
+        if (inp) { inp.value = v; inp.focus(); }
+        return;
+      }
+      if (del) {
+        const id = (document.getElementById('uuid-val')?.textContent || '').trim();
+        if (!id) { alert('未找到待删除的 UUID'); return; }
+        if (!confirm('确认删除该菜谱？其分类关联也将被删除。')) return;
+        const res = await fetch('/api/recipes/' + encodeURIComponent(id), { method: 'DELETE' });
+        let msg = '';
+        try { const data = await res.json(); msg = data?.detail || data?.error || ''; } catch {}
+        if (!res.ok) { alert('删除失败：' + (msg || res.status)); return; }
+        alert('已删除');
+        location.reload();
+        return;
+      }
     });
   </script>
 </body>
