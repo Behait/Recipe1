@@ -47,33 +47,28 @@ const RecipeCard: React.FC<{ item: RecipeItem; badge?: string } > = ({ item, bad
   const imageElement = item.image_url 
     ? <img src={item.image_url} alt={title} className="w-full h-36 sm:h-40 object-cover" loading="lazy" />
     : <div className="w-full h-36 sm:h-40 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" className="w-32 h-24">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" className="w-full h-full max-w-40 max-h-32">
           <defs>
             <linearGradient id="bg-trending" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" style={{stopColor:'#f1f5f9', stopOpacity:1}} />
-              <stop offset="100%" style={{stopColor:'#e2e8f0', stopOpacity:1}} />
+              <stop offset="0%" style={{stopColor:'#fef3c7', stopOpacity:1}} />
+              <stop offset="100%" style={{stopColor:'#fbbf24', stopOpacity:1}} />
+            </linearGradient>
+            <linearGradient id="hat-trending" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style={{stopColor:'#dc2626', stopOpacity:1}} />
+              <stop offset="100%" style={{stopColor:'#991b1b', stopOpacity:1}} />
+            </linearGradient>
+            <linearGradient id="utensil-trending" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style={{stopColor:'#374151', stopOpacity:1}} />
+              <stop offset="100%" style={{stopColor:'#1f2937', stopOpacity:1}} />
             </linearGradient>
           </defs>
-          <rect width="400" height="300" fill="url(#bg-trending)"/>
-          <g transform="translate(200,150)">
-            <ellipse cx="0" cy="-20" rx="45" ry="15" fill="#64748b" opacity="0.3"/>
-            <path d="M -35,-35 Q -35,-55 -20,-60 Q -10,-65 0,-65 Q 10,-65 20,-60 Q 35,-55 35,-35 L 35,-20 Q 35,-15 30,-15 L -30,-15 Q -35,-15 -35,-20 Z" fill="#64748b" opacity="0.4"/>
-            <g transform="translate(-60,20)">
-              <rect x="-2" y="0" width="4" height="40" fill="#64748b" opacity="0.3"/>
-              <rect x="-8" y="-5" width="4" height="15" fill="#64748b" opacity="0.3"/>
-              <rect x="-2" y="-5" width="4" height="15" fill="#64748b" opacity="0.3"/>
-              <rect x="4" y="-5" width="4" height="15" fill="#64748b" opacity="0.3"/>
-            </g>
-            <g transform="translate(60,20)">
-              <rect x="-2" y="0" width="4" height="35" fill="#64748b" opacity="0.3"/>
-              <ellipse cx="0" cy="-8" rx="8" ry="12" fill="#64748b" opacity="0.3"/>
-            </g>
-          </g>
-          <circle cx="80" cy="80" r="3" fill="#10b981" opacity="0.2"/>
-          <circle cx="320" cy="220" r="4" fill="#10b981" opacity="0.2"/>
-          <circle cx="350" cy="100" r="2" fill="#10b981" opacity="0.2"/>
-          <circle cx="50" cy="250" r="3" fill="#10b981" opacity="0.2"/>
-          <text x="200" y="220" textAnchor="middle" fontFamily="system-ui, sans-serif" fontSize="16" fill="#64748b" opacity="0.5">美味菜谱</text>
+          <rect width="400" height="300" fill="url(#bg-trending)" />
+          <path d="M200 80 C180 80, 160 100, 160 120 L160 140 C160 150, 170 160, 180 160 L220 160 C230 160, 240 150, 240 140 L240 120 C240 100, 220 80, 200 80 Z" fill="url(#hat-trending)" />
+          <ellipse cx="200" cy="170" rx="50" ry="8" fill="url(#hat-trending)" />
+          <rect x="180" y="180" width="8" height="40" fill="url(#utensil-trending)" />
+          <rect x="212" y="180" width="8" height="40" fill="url(#utensil-trending)" />
+          <path d="M175 200 Q180 195, 185 200 Q190 205, 195 200 Q200 195, 205 200 Q210 205, 215 200 Q220 195, 225 200" stroke="url(#utensil-trending)" strokeWidth="3" fill="none" />
+          <text x="200" y="260" textAnchor="middle" fontSize="24" fill="#dc2626" fontFamily="serif" fontWeight="bold">美味菜谱</text>
         </svg>
       </div>;
   
