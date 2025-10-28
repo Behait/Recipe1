@@ -57,9 +57,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   const handleSelectRecipeOption = async (option: RecipeOption) => {
-    console.log('HomeScreen: Selecting option:', option);
     setSelectedOption(option);
-    console.log('HomeScreen: setSelectedOption called.');
     setIsGeneratingDetails(true);
     setError(null);
     setRetryAction(null);
