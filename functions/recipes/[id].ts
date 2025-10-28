@@ -135,37 +135,65 @@ export const onRequestGet = async ({ params, env, request }: any) => {
       <button class="rounded-md bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-800 px-3 py-2" type="submit">搜索</button>\
     </form>',
   })}
-  <main class="mx-auto max-w-4xl px-4 py-6">
-    <article class="space-y-6">
-      <section class="rounded-md overflow-hidden bg-white dark:bg-slate-800 shadow">
-        <div class="h-64 bg-slate-100 dark:bg-slate-700">${img}</div>
-        <div class="p-4">
-          <h1 class="text-2xl font-bold mb-2">${escapeHtml(recipe.recipe_name)}</h1>
-          <p class="text-slate-600 dark:text-slate-300 mb-4">${description}</p>
-          <div class="grid grid-cols-2 gap-4 mb-4">
-            <div><span class="font-semibold">准备时间：</span>${escapeHtml(recipe.prep_time || '未知')}</div>
-            <div><span class="font-semibold">烹饪时间：</span>${escapeHtml(recipe.cook_time || '未知')}</div>
+  <main class="max-w-4xl mx-auto px-4 py-6">
+    <article class="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
+      <figure class="w-full h-48 sm:h-64 bg-slate-100 dark:bg-slate-700">${img}</figure>
+      <div class="p-6 sm:p-8">
+        <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-2 tracking-tight">${escapeHtml(recipe.recipe_name)}</h1>
+        <p class="text-slate-600 dark:text-slate-400 mb-6 italic">${description}</p>
+        <div class="flex flex-wrap gap-4 sm:gap-6 mb-6 text-center">
+          <div class="flex-1 min-w-[160px] bg-slate-100 dark:bg-slate-700 p-4 rounded-lg">
+            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">准备时间</p>
+            <p class="text-xl font-bold text-emerald-600 dark:text-emerald-400">${escapeHtml(recipe.prep_time || '未知')}</p>
           </div>
-          <h2 class="text-xl font-semibold mt-6 mb-2">食材</h2>
-          <ul class="list-disc pl-5 space-y-1">${ingredientsHtml}</ul>
-          <h2 class="text-xl font-semibold mt-6 mb-2">步骤</h2>
-          <ol class="list-decimal pl-5 space-y-2">${instructionsHtml}</ol>
+          <div class="flex-1 min-w-[160px] bg-slate-100 dark:bg-slate-700 p-4 rounded-lg">
+            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">烹饪时间</p>
+            <p class="text-xl font-bold text-emerald-600 dark:text-emerald-400">${escapeHtml(recipe.cook_time || '未知')}</p>
+          </div>
         </div>
-      </section>
+        <section class="grid md:grid-cols-5 gap-8">
+          <div class="md:col-span-2">
+            <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-3 border-b-2 border-emerald-500 pb-2">所需食材</h2>
+            <ul class="space-y-2 list-disc list-inside text-slate-600 dark:text-slate-300">${ingredientsHtml}</ul>
+          </div>
+          <div class="md:col-span-3">
+            <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-3 border-b-2 border-emerald-500 pb-2">制作步骤</h2>
+            <ol class="space-y-4 text-slate-600 dark:text-slate-300">
+              ${(recipe.instructions || []).map((instruction: string, index: number) => `
+                <li class="flex items-start">
+                  <span class="bg-emerald-500 text-white font-bold rounded-full h-6 w-6 text-sm flex items-center justify-center mr-3 flex-shrink-0">${index + 1}</span>
+                  <span>${escapeHtml(instruction)}</span>
+                </li>
+              `).join('')}
+            </ol>
+          </div>
+        </section>
+        ${(categories && categories.length) ? `
+        <section class="mt-10">
+          <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-4">相关分类</h2>
+          <div class="flex flex-wrap gap-2">
+            ${categories.map((c: any) => `<a class="inline-block rounded-md border border-slate-300 dark:border-slate-600 px-2 py-1" href="/categories/${encodeURIComponent(c.slug)}">${escapeHtml(c.name)}</a>`).join('')}
+          </div>
+        </section>
+        ` : ''}
 
-      ${(categories && categories.length) ? `<section class="bg-white dark:bg-slate-800 rounded-md shadow p-4">
-        <h3 class="text-lg font-semibold mb-2">相关分类</h3>
-        <div class="flex flex-wrap gap-2">
-          ${categories.map((c: any) => `<a class="inline-block rounded-md border border-slate-300 dark:border-slate-600 px-2 py-1" href="/categories/${encodeURIComponent(c.slug)}">${escapeHtml(c.name)}</a>`).join('')}
-        </div>
-      </section>` : ''}
-
-      ${(related && related.length) ? `<section class="bg-white dark:bg-slate-800 rounded-md shadow p-4">
-        <h3 class="text-lg font-semibold mb-2">相关推荐</h3>
-        <ul class="space-y-2">
-          ${related.map((r: any) => `<li><a class="text-blue-600 dark:text-blue-400 hover:underline" href="/recipes/${encodeURIComponent(r.slug)}">${escapeHtml(r.recipe_name)}</a></li>`).join('')}
-        </ul>
-      </section>` : ''}
+        ${(related && related.length) ? `
+        <section class="mt-10">
+          <h2 class="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-4">你可能还喜欢</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            ${related.map((r: any) => `
+              <a href="/recipes/${escapeHtml(r.slug)}" class="block rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow bg-white dark:bg-slate-800">
+                <div class="h-36 bg-slate-100 overflow-hidden">${r.image_url ? `<img src='${escapeHtml(r.image_url)}' alt='${escapeHtml(r.recipe_name)}' class='w-full h-full object-cover' loading='lazy'/>` : ''}</div>
+                <div class="p-3">
+                  <h3 class="font-medium text-slate-800 dark:text-slate-200 line-clamp-1">${escapeHtml(r.recipe_name)}</h3>
+                  <p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">${escapeHtml(r.description || '')}</p>
+                </div>
+              </a>
+            `).join('')}
+          </div>
+        </section>
+        ` : ''}
+      </div>
     </article>
 
     <nav class="mt-8 flex items-center justify-between">
