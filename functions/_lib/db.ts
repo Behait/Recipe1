@@ -104,19 +104,57 @@ export async function getDailyByDate(sql: any, dateStr: string): Promise<any | n
 }
 
 export async function incrementRecipeHit(sql: any, id: string, recipeName?: string): Promise<void> {
-  await sql`UPDATE recipes SET hit_count = COALESCE(hit_count, 0) + 1, last_accessed_at = now() WHERE id = ${id}`;
-  
-  // 获取菜谱名称（如果没有提供）
-  let name = recipeName;
-  if (!name) {
-    const recipe = await sql`SELECT recipe_name FROM recipes WHERE id = ${id} LIMIT 1`;
-    name = recipe[0]?.recipe_name || '';
+  try {
+    console.log(`[incrementRecipeHit] Starting for recipe ID: ${id}, recipeName: ${recipeName}`);
+    
+    // 首先检查recipes表是否有hit_count列
+    try {
+      const updateResult = await sql`UPDATE recipes SET hit_count = COALESCE(hit_count, 0) + 1, last_accessed_at = now() WHERE id = ${id}`;
+      console.log(`[incrementRecipeHit] Updated recipes table, affected rows: ${updateResult.count || 'unknown'}`);
+    } catch (updateError) {
+      console.error(`[incrementRecipeHit] Error updating recipes table:`, updateError);
+      
+      // 如果hit_count列不存在，尝试只更新last_accessed_at
+      try {
+        const fallbackResult = await sql`UPDATE recipes SET last_accessed_at = now() WHERE id = ${id}`;
+        console.log(`[incrementRecipeHit] Fallback update (last_accessed_at only), affected rows: ${fallbackResult.count || 'unknown'}`);
+      } catch (fallbackError) {
+        console.error(`[incrementRecipeHit] Fallback update also failed:`, fallbackError);
+        // 如果连last_accessed_at都不存在，就只记录统计数据
+        console.log(`[incrementRecipeHit] Continuing with stats recording only...`);
+      }
+    }
+    
+    // 获取菜谱名称（如果没有提供）
+    let name = recipeName;
+    if (!name) {
+      try {
+        const recipe = await sql`SELECT recipe_name FROM recipes WHERE id = ${id} LIMIT 1`;
+        name = recipe[0]?.recipe_name || '';
+        console.log(`[incrementRecipeHit] Retrieved recipe name: ${name}`);
+      } catch (nameError) {
+        console.error(`[incrementRecipeHit] Error retrieving recipe name:`, nameError);
+        name = 'Unknown Recipe';
+      }
+    }
+    
+    // 记录统计数据
+    try {
+      const statsResult = await sql`INSERT INTO recipe_hit_stats (recipe_id, hit_date, hit_count, recipe_name, is_ai_generated)
+                VALUES (${id}, current_date, 1, ${name}, false)
+                ON CONFLICT (recipe_id, hit_date)
+                DO UPDATE SET hit_count = recipe_hit_stats.hit_count + 1, recipe_name = EXCLUDED.recipe_name`;
+      console.log(`[incrementRecipeHit] Successfully recorded stats, affected rows: ${statsResult.count || 'unknown'}`);
+    } catch (statsError) {
+      console.error(`[incrementRecipeHit] Error recording stats:`, statsError);
+      throw statsError; // 重新抛出统计错误，因为这是主要功能
+    }
+    
+    console.log(`[incrementRecipeHit] Completed successfully for recipe ID: ${id}`);
+  } catch (error) {
+    console.error(`[incrementRecipeHit] Fatal error for recipe ID ${id}:`, error);
+    throw error;
   }
-  
-  await sql`INSERT INTO recipe_hit_stats (recipe_id, hit_date, hit_count, recipe_name, is_ai_generated)
-            VALUES (${id}, current_date, 1, ${name}, false)
-            ON CONFLICT (recipe_id, hit_date)
-            DO UPDATE SET hit_count = recipe_hit_stats.hit_count + 1, recipe_name = EXCLUDED.recipe_name`;
 }
 
 // Adjacent navigation helpers for detail pages
