@@ -91,7 +91,13 @@ export const onRequestGet = async ({ params, env, request }: any) => {
     const url = new URL(request.url);
     const title = `${escapeHtml(recipe.recipe_name)} - AI菜谱生成器`;
     const description = escapeHtml(recipe.description || "");
-    const img = recipe.image_url ? `<img class="w-full h-full object-cover" src="${escapeHtml(recipe.image_url)}" alt="${escapeHtml(recipe.recipe_name)}" loading="eager"/>` : "";
+    const img = recipe.image_url 
+      ? `<img class="w-full h-full object-cover" src="${escapeHtml(recipe.image_url)}" alt="${escapeHtml(recipe.recipe_name)}" loading="eager"/>` 
+      : `<div class="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">\
+           <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">\
+             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />\
+           </svg>\
+         </div>`;
 
     const ingredientsHtml = (recipe.ingredients || [])
       .map((i: string) => `<li>${escapeHtml(i)}</li>`)?.join("\n") || "";

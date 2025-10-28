@@ -30,7 +30,13 @@ export const onRequestGet = async ({ request, env }: any) => {
     const listHtml = (items || []).map((it: any) => {
       const recipeName = escapeHtml(it.recipe_name);
       const desc = escapeHtml(it.description || "");
-      const img = it.image_url ? `<img class=\"w-full h-40 object-cover\" src=\"${escapeHtml(it.image_url)}\" alt=\"${recipeName}\" loading=\"lazy\"/>` : "";
+      const img = it.image_url 
+        ? `<img class=\"w-full h-40 object-cover\" src=\"${escapeHtml(it.image_url)}\" alt=\"${recipeName}\" loading=\"lazy\"/>` 
+        : `<div class=\"w-full h-40 bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-800 dark:to-emerald-900 flex items-center justify-center\">\
+             <svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-16 w-16 text-emerald-500 dark:text-emerald-400\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\">\
+               <path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\" d=\"M13 10V3L4 14h7v7l9-11h-7z\" />\
+             </svg>\
+           </div>`;
       const slug = escapeHtml(it.slug || String(it.id));
       return `<article class=\"rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden\">\n          <a href=\"/recipes/${slug}\" class=\"block\">${img}</a>\n          <div class=\"p-3 space-y-2\">\n            <h2 class=\"text-lg font-semibold\"><a class=\"hover:text-indigo-600\" href=\"/recipes/${slug}\">${recipeName}</a></h2>\n            <p class=\"text-slate-600 dark:text-slate-400 line-clamp-3\">${desc}</p>\n          </div>\n        </article>`;
     }).join("\n");

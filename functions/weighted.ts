@@ -49,7 +49,13 @@ export const onRequestGet = async ({ request, env }: any) => {
     const listHtml = (items || []).map((it: any) => {
       const recipeName = escapeHtml(it.recipe_name);
       const desc = escapeHtml(it.description || "");
-      const img = it.image_url ? `<img class=\"w-full h-40 object-cover\" src=\"${escapeHtml(it.image_url)}\" alt=\"${recipeName}\" loading=\"lazy\"/>` : "";
+      const img = it.image_url 
+        ? `<img class=\"w-full h-40 object-cover\" src=\"${escapeHtml(it.image_url)}\" alt=\"${recipeName}\" loading=\"lazy\"/>` 
+        : `<div class=\"w-full h-40 bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-800 dark:to-indigo-900 flex items-center justify-center\">\
+             <svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-16 w-16 text-indigo-500 dark:text-indigo-400\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\">\
+               <path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\" d=\"M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z\" />\
+             </svg>\
+           </div>`;
       const slug = escapeHtml(it.slug || String(it.id));
       return `<article class=\"rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden\">\n          <a href=\"/recipes/${slug}\" class=\"block\">${img}</a>\n          <div class=\"p-3 space-y-2\">\n            <h2 class=\"text-lg font-semibold\"><a class=\"hover:text-indigo-600\" href=\"/recipes/${slug}\">${recipeName}</a></h2>\n            <p class=\"text-slate-600 dark:text-slate-400 line-clamp-3\">${desc}</p>\n          </div>\n        </article>`;
     }).join("\n");

@@ -24,7 +24,13 @@ export const onRequestGet = async ({ params, env, request }: any) => {
     const url = new URL(request.url);
     const title = `今日推荐（${escapeHtml(date)}） - ${escapeHtml(recipe.recipe_name)}`;
     const description = escapeHtml(recipe.description || "");
-    const img = recipe.image_url ? `<img class=\"w-full h-full object-cover\" src=\"${escapeHtml(recipe.image_url)}\" alt=\"${escapeHtml(recipe.recipe_name)}\" loading=\"eager\"/>` : "";
+    const img = recipe.image_url 
+    ? `<img class=\"w-full h-full object-cover\" src=\"${escapeHtml(recipe.image_url)}\" alt=\"${escapeHtml(recipe.recipe_name)}\" loading=\"eager\"/>` 
+    : `<div class=\"w-full h-full bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-800 dark:to-amber-900 flex items-center justify-center\">\
+         <svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-24 w-24 text-amber-500 dark:text-amber-400\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\">\
+           <path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1.5\" d=\"M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z\" />\
+         </svg>\
+       </div>`;
 
     const jsonLd = {
       "@context": "https://schema.org",

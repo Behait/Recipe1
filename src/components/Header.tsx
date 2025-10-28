@@ -27,6 +27,7 @@ const Header: React.FC = () => {
         {/* 桌面导航 */}
         <nav className="hidden md:flex items-center gap-4 ml-auto">
           <a href="/recipes/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">菜谱</a>
+          <a href={`/daily/${new Date().toISOString().split('T')[0]}/`} className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">每日推荐</a>
           <a href="/categories/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">分类</a>
           <a href="/popular/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">热门</a>
           <a href="/week/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">本周</a>
@@ -60,6 +61,7 @@ const Header: React.FC = () => {
           <div className="container mx-auto max-w-4xl p-4 space-y-3">
             <div className="flex flex-wrap gap-4">
               <a href="/recipes/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">菜谱</a>
+              <a href={`/daily/${new Date().toISOString().split('T')[0]}/`} className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">每日推荐</a>
               <a href="/categories/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">分类</a>
               <a href="/popular/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">热门</a>
               <a href="/week/" className="text-slate-700 dark:text-slate-200 hover:text-emerald-600">本周</a>
