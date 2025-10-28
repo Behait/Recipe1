@@ -52,7 +52,7 @@ export const onRequestGet = async ({ request, env }: any) => {
       const img = it.image_url 
         ? `<img class=\"w-full h-40 object-cover\" src=\"${escapeHtml(it.image_url)}\" alt=\"${recipeName}\" loading=\"lazy\"/>` 
         : `<div class=\"w-full h-40 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center\">\
-             <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 300\" class=\"w-20 h-16\">\
+             <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 300\" class=\"w-32 h-24\">\
                <defs>\
                  <linearGradient id=\"bg-weighted\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\">\
                    <stop offset=\"0%\" style=\"stop-color:#f1f5f9;stop-opacity:1\" />\
