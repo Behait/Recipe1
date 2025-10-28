@@ -1,4 +1,4 @@
-import { getSql, listCategories } from './_lib/db';
+import { getSql, listCategories, getRecipeByName } from './_lib/db';
 import { renderHeader, renderFooter } from './_lib/layout';
 
 function escapeHtml(str: string) {
@@ -15,6 +15,8 @@ export const onRequestGet = async ({ env, request }: any) => {
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
   const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit') || '20', 10)));
   const q = url.searchParams.get('q') || undefined;
+  const findNameRaw = url.searchParams.get('recipeName') || '';
+  const findName = findNameRaw.trim() || '';
 
   const conn = (env as any).DB_CONNECTION_STRING;
   if (!conn) {
@@ -25,10 +27,14 @@ export const onRequestGet = async ({ env, request }: any) => {
   const sql = getSql(conn);
   let items: any[] = [];
   let total = 0;
+  let foundRecipe: any | null = null;
   try {
     const res = await listCategories(sql, page, limit, q);
     items = res.items;
     total = res.total;
+    if (findName) {
+      foundRecipe = await getRecipeByName(sql, findName);
+    }
   } catch (err: any) {
     const msg = (err && err.message) ? err.message : String(err || 'unknown error');
     const html = `<!doctype html><html lang="zh"><head><meta charset="utf-8" /><title>管理中心 · 错误</title></head><body><h1>管理中心</h1><p>数据库查询失败：${escapeHtml(msg)}</p><p>请检查环境变量 DB_CONNECTION_STRING 与 Neon 数据库可用性。</p></body></html>`;
@@ -92,6 +98,31 @@ export const onRequestGet = async ({ env, request }: any) => {
         <p class="text-sm">数据库连接：<span class="font-mono">已配置</span>；如遇 500 错误，请检查 Neon 可用性与 <code>DB_CONNECTION_STRING</code> 的取值（推荐使用密钥 Secret）。</p>
       </div>
     </section>
+    <section>
+      <h2 class="text-xl font-semibold mb-3">按菜谱名称查找 UUID</h2>
+      <form class="mb-3 flex items-center gap-2" method="GET" action="/admin">
+        <input class="w-80 rounded-md border px-3 py-2" type="text" name="recipeName" value="${escapeHtml(findName)}" placeholder="精确填写菜谱名称" />
+        <button class="px-3 py-2 rounded-md border bg-white hover:bg-slate-50" type="submit">查询</button>
+        <input type="hidden" name="page" value="${page}" />
+        <input type="hidden" name="limit" value="${limit}" />
+        ${q ? `<input type="hidden" name="q" value="${escapeHtml(q)}" />` : ''}
+      </form>
+      <div class="p-3 rounded border bg-slate-50 text-sm">
+        ${foundRecipe ? (`
+          <div class="space-y-1">
+            <div>名称：<span class="font-mono">${escapeHtml(foundRecipe.recipe_name)}</span></div>
+            <div>UUID：<span id="uuid-val" class="font-mono break-all">${escapeHtml(foundRecipe.id)}</span></div>
+            <div>Slug：<span class="font-mono">${escapeHtml(foundRecipe.slug)}</span>（<a class="text-blue-600 hover:underline" href="/recipes/${escapeHtml(foundRecipe.slug)}" target="_blank">查看详情</a>）</div>
+            <div class="mt-2 flex gap-2">
+              <button id="copy-uuid" class="px-3 py-1 rounded-md border bg-white hover:bg-slate-50" type="button">复制 UUID</button>
+              <button id="fill-del" class="px-3 py-1 rounded-md border bg-white hover:bg-slate-50" type="button">填入删除框</button>
+              <button id="delete-found" class="px-3 py-1 rounded-md border border-red-300 text-red-700 bg-white hover:bg-red-50" type="button">删除</button>
+            </div>
+          </div>
+        `) : (findName ? '<div class="text-amber-700">未找到匹配的菜谱（名称需精确一致）。</div>' : '<div class="text-slate-500">在上方输入菜谱名称并查询，结果将显示在此。</div>')}
+      </div>
+    </section>
+
     <section>
       <h2 class="text-xl font-semibold mb-3">分类管理</h2>
       <form class="mb-4 flex items-center gap-2" method="GET" action="/admin">
@@ -241,6 +272,31 @@ export const onRequestGet = async ({ env, request }: any) => {
       const data = await res.json();
       if(!res.ok){ box.textContent = '删除失败：' + (data?.detail || data?.error || res.status); return; }
       box.textContent = '已删除';
+    });
+
+    const copyBtn = document.getElementById('copy-uuid');
+    copyBtn?.addEventListener('click', async ()=>{
+      const t = document.getElementById('uuid-val')?.textContent || '';
+      try { await navigator.clipboard.writeText(t); alert('UUID 已复制'); } catch { alert('复制失败，请手动选择复制'); }
+    });
+    const fillBtn = document.getElementById('fill-del');
+    fillBtn?.addEventListener('click', ()=>{
+      const t = document.getElementById('uuid-val')?.textContent || '';
+      const inp = delForm?.querySelector('input[name="id"]') as HTMLInputElement | null;
+      if(inp){ inp.value = t; inp.focus(); }
+    });
+
+    const delFoundBtn = document.getElementById('delete-found');
+    delFoundBtn?.addEventListener('click', async ()=>{
+      const id = (document.getElementById('uuid-val')?.textContent || '').trim();
+      if(!id){ alert('未找到待删除的 UUID'); return; }
+      if(!confirm('确认删除该菜谱？其分类关联也将被删除。')) return;
+      const res = await fetch('/api/recipes/' + encodeURIComponent(id), { method: 'DELETE' });
+      let msg = '';
+      try { const data = await res.json(); msg = data?.detail || data?.error || ''; } catch {}
+      if(!res.ok){ alert('删除失败：' + (msg || res.status)); return; }
+      alert('已删除');
+      location.reload();
     });
   </script>
 </body>

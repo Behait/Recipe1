@@ -83,7 +83,8 @@ export const onRequestGet = async ({ params, env, request }: any) => {
       return new Response("Not found", { status: 404 });
     }
 
-    if (recipe.id > 0) {
+    // 仅当来自数据库的真实菜谱（非临时 AI 生成）时记录命中
+    if (!isFromAI && recipe.id) {
       try { await incrementRecipeHit(sql, recipe.id); } catch (e) { console.error('increment hit error (SSR recipe detail):', e); }
     }
 
