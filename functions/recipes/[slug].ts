@@ -266,7 +266,7 @@ export const onRequestGet = async ({ params, env, request }: any) => {
     return new Response(html, {
       headers: {
         "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "public, max-age=600",
+        "Cache-Control": "no-store",
       },
     });
   } catch (e: any) {
