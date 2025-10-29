@@ -46,31 +46,7 @@ const RecipeCard: React.FC<{ item: RecipeItem; badge?: string } > = ({ item, bad
   
   const imageElement = item.image_url 
     ? <img src={item.image_url} alt={title} className="w-full h-36 sm:h-40 object-cover" loading="lazy" />
-    : <div className="w-full h-36 sm:h-40 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" className="w-full h-full">
-          <defs>
-            <linearGradient id="bg-trending" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" style={{stopColor:'#fef3c7', stopOpacity:1}} />
-              <stop offset="100%" style={{stopColor:'#fbbf24', stopOpacity:1}} />
-            </linearGradient>
-            <linearGradient id="hat-trending" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" style={{stopColor:'#dc2626', stopOpacity:1}} />
-              <stop offset="100%" style={{stopColor:'#991b1b', stopOpacity:1}} />
-            </linearGradient>
-            <linearGradient id="utensil-trending" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" style={{stopColor:'#374151', stopOpacity:1}} />
-              <stop offset="100%" style={{stopColor:'#1f2937', stopOpacity:1}} />
-            </linearGradient>
-          </defs>
-          <rect width="400" height="300" fill="url(#bg-trending)" />
-          <path d="M200 80 C180 80, 160 100, 160 120 L160 140 C160 150, 170 160, 180 160 L220 160 C230 160, 240 150, 240 140 L240 120 C240 100, 220 80, 200 80 Z" fill="url(#hat-trending)" />
-          <ellipse cx="200" cy="170" rx="50" ry="8" fill="url(#hat-trending)" />
-          <rect x="180" y="180" width="8" height="40" fill="url(#utensil-trending)" />
-          <rect x="212" y="180" width="8" height="40" fill="url(#utensil-trending)" />
-          <path d="M175 200 Q180 195, 185 200 Q190 205, 195 200 Q200 195, 205 200 Q210 205, 215 200 Q220 195, 225 200" stroke="url(#utensil-trending)" strokeWidth="3" fill="none" />
-          <text x="200" y="260" textAnchor="middle" fontSize="24" fill="#dc2626" fontFamily="serif" fontWeight="bold">美味菜谱</text>
-        </svg>
-      </div>;
+    : <img src="/default-recipe.png" alt={title} className="w-full h-36 sm:h-40 object-cover" loading="lazy" />;
   
   return (
     <article className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">

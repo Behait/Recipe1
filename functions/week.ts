@@ -32,31 +32,7 @@ export const onRequestGet = async ({ request, env }: any) => {
       const desc = escapeHtml(it.description || "");
       const img = it.image_url 
         ? `<img class=\"w-full h-40 object-cover\" src=\"${escapeHtml(it.image_url)}\" alt=\"${recipeName}\" loading=\"lazy\"/>` 
-        : `<div class=\"w-full h-40 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800\">\
-             <svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 300\" class=\"w-full h-full\">\
-               <defs>\
-                 <linearGradient id=\"bg-week\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\">\
-                   <stop offset=\"0%\" style=\"stop-color:#fef3c7;stop-opacity:1\" />\
-                   <stop offset=\"100%\" style=\"stop-color:#fbbf24;stop-opacity:1\" />\
-                 </linearGradient>\
-                 <linearGradient id=\"hat-week\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\">\
-                   <stop offset=\"0%\" style=\"stop-color:#dc2626;stop-opacity:1\" />\
-                   <stop offset=\"100%\" style=\"stop-color:#991b1b;stop-opacity:1\" />\
-                 </linearGradient>\
-                 <linearGradient id=\"utensil-week\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\">\
-                   <stop offset=\"0%\" style=\"stop-color:#374151;stop-opacity:1\" />\
-                   <stop offset=\"100%\" style=\"stop-color:#1f2937;stop-opacity:1\" />\
-                 </linearGradient>\
-               </defs>\
-               <rect width=\"400\" height=\"300\" fill=\"url(#bg-week)\" />\
-               <path d=\"M200 80 C180 80, 160 100, 160 120 L160 140 C160 150, 170 160, 180 160 L220 160 C230 160, 240 150, 240 140 L240 120 C240 100, 220 80, 200 80 Z\" fill=\"url(#hat-week)\" />\
-               <ellipse cx=\"200\" cy=\"170\" rx=\"50\" ry=\"8\" fill=\"url(#hat-week)\" />\
-               <rect x=\"180\" y=\"180\" width=\"8\" height=\"40\" fill=\"url(#utensil-week)\" />\
-               <rect x=\"212\" y=\"180\" width=\"8\" height=\"40\" fill=\"url(#utensil-week)\" />\
-               <path d=\"M175 200 Q180 195, 185 200 Q190 205, 195 200 Q200 195, 205 200 Q210 205, 215 200 Q220 195, 225 200\" stroke=\"url(#utensil-week)\" stroke-width=\"3\" fill=\"none\" />\
-               <text x=\"200\" y=\"260\" text-anchor=\"middle\" font-size=\"24\" fill=\"#dc2626\" font-family=\"serif\" font-weight=\"bold\">美味菜谱</text>\
-             </svg>\
-           </div>`;
+        : `<img class=\"w-full h-40 object-cover\" src=\"/default-recipe.png\" alt=\"${recipeName}\" loading=\"lazy\"/>`;
       const slug = escapeHtml(it.slug || String(it.id));
       return `<article class=\"rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden\">\n          <a href=\"/recipes/${slug}\" class=\"block\">${img}</a>\n          <div class=\"p-3 space-y-2\">\n            <h2 class=\"text-lg font-semibold\"><a class=\"hover:text-indigo-600\" href=\"/recipes/${slug}\">${recipeName}</a></h2>\n            <p class=\"text-slate-600 dark:text-slate-400 line-clamp-3\">${desc}</p>\n          </div>\n        </article>`;
     }).join("\n");
