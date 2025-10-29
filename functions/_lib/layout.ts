@@ -55,6 +55,7 @@ export function renderHead(opts: HeadOptions): string {
   return `
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="baidu-site-verification" content="codeva-nkYBUV3LW8" />
   <title>${title}</title>
   ${desc ? `<meta name=\"description\" content=\"${desc}\" />` : ''}
   ${canonicalLink}
