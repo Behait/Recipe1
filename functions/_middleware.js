@@ -12,6 +12,12 @@ export async function onRequest(context) {
   // Admin protection: Basic Auth for /admin and admin API writes
   const adminUser = env?.ADMIN_USER;
   const adminPass = env?.ADMIN_PASS;
+  
+  // Explicitly exclude /api/generate from authentication requirements
+  if (url.pathname === '/api/generate') {
+    return await next();
+  }
+  
   const needsAdmin =
     url.pathname.startsWith('/admin') ||
     ((url.pathname.startsWith('/api/categories/') || url.pathname === '/api/categories') && (request.method === 'PUT' || request.method === 'DELETE' || request.method === 'POST')) ||
