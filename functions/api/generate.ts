@@ -62,10 +62,18 @@ type PagesFunction<Env = unknown> = (context: {
 
 // Cloudflare Function handler
 export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string, DB_CONNECTION_STRING: string }> = async ({ request, env }) => {
+  // CRITICAL: This endpoint should NEVER require authentication
+  // Add explicit header to bypass any authentication middleware
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-No-Auth-Required': 'true',
+    'X-Public-API': 'generate'
+  };
+
   if (!env.GEMINI_API_KEY) {
     return new Response(JSON.stringify({ error: "API key is not configured on the server." }), { 
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers
     });
   }
 
@@ -85,7 +93,7 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string, DB_CONNECTIO
             temperature: 0.8,
           }
         });
-        return new Response(geminiResponse.text, { headers: { 'Content-Type': 'application/json' } });
+        return new Response(geminiResponse.text, { headers });
       }
       case 'generateDetails': {
         const requestedName: string = (payload.recipeName || '').trim();
@@ -108,7 +116,7 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string, DB_CONNECTIO
                 imageUrl: existed.image_url || '',
               };
               try { await incrementRecipeHit(sql, existed.id); } catch (e) { console.error('increment hit error (cached generateDetails):', e); }
-              return new Response(JSON.stringify(cached), { headers: { 'Content-Type': 'application/json' } });
+              return new Response(JSON.stringify(cached), { headers });
             }
           } catch (e) {
             console.error('DB cache lookup error (generateDetails):', e);
@@ -212,7 +220,7 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string, DB_CONNECTIO
           instructions: details.instructions,
           imageUrl: imageUrl,
         };
-        return new Response(JSON.stringify(finalRecipe), { headers: { 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify(finalRecipe), { headers });
       }
       case 'generateRotd': {
         const prompt = `为“今日推荐”生成一个有创意且受欢迎的菜谱。该菜谱应能吸引广大受众，使用相对常见的食材，并适合作为工作日晚餐。菜谱应包含：1. 简短诱人的描述。2. 准备时间（例如，“15分钟”）。3. 烹饪时间（例如，“25分钟”）。4. 包含所有必要食材及其用量的列表。5. 详细的制作步骤。请以中文JSON格式提供输出。`;
@@ -310,7 +318,7 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string, DB_CONNECTIO
           instructions: details.instructions,
           imageUrl: imageUrl,
         };
-        return new Response(JSON.stringify(finalRecipe), { headers: { 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify(finalRecipe), { headers });
       }
       case 'generateImage': {
         const prompt = `A professional, delicious, mouth-watering photo of ${payload.recipeName}, beautifully plated on a clean background, vibrant colors, appetizing, high-resolution food photography.`;
@@ -327,26 +335,27 @@ export const onRequestPost: PagesFunction<{ GEMINI_API_KEY: string, DB_CONNECTIO
         if (imageResponse.generatedImages && imageResponse.generatedImages.length > 0) {
             const base64ImageBytes = imageResponse.generatedImages[0].image.imageBytes;
             const imageUrl = `data:image/png;base64,${base64ImageBytes}`;
-            return new Response(JSON.stringify({ imageUrl }), {
-                headers: { 'Content-Type': 'application/json' }
-            });
+            return new Response(JSON.stringify({ imageUrl }), { headers });
         } else {
-             return new Response(JSON.stringify({ imageUrl: '' }), {
-                headers: { 'Content-Type': 'application/json' }
-            });
+             return new Response(JSON.stringify({ imageUrl: '' }), { headers });
         }
       }
       default:
         return new Response(JSON.stringify({ error: 'Invalid request type' }), { 
             status: 400,
-            headers: { 'Content-Type': 'application/json' }
+            headers
         });
     }
   } catch (error: any) {
     console.error("Error in Cloudflare Function:", error);
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-No-Auth-Required': 'true',
+      'X-Public-API': 'generate'
+    };
     return new Response(JSON.stringify({ error: error.message || 'An internal server error occurred.' }), { 
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers
     });
   }
 };

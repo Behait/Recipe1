@@ -9,14 +9,18 @@ export async function onRequest(context) {
   const { next, request, env } = context;
   const url = new URL(request.url);
 
+  // CRITICAL: Explicitly exclude /api/generate from ALL authentication requirements
+  // This must be checked BEFORE any other logic to prevent authentication prompts
+  if (url.pathname === '/api/generate') {
+    // Add debug header to confirm this path is being handled correctly
+    const response = await next();
+    response.headers.set('X-Auth-Bypass', 'generate-api');
+    return response;
+  }
+
   // Admin protection: Basic Auth for /admin and admin API writes
   const adminUser = env?.ADMIN_USER;
   const adminPass = env?.ADMIN_PASS;
-  
-  // Explicitly exclude /api/generate from authentication requirements
-  if (url.pathname === '/api/generate') {
-    return await next();
-  }
   
   const needsAdmin =
     url.pathname.startsWith('/admin') ||
