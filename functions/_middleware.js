@@ -9,12 +9,12 @@ export async function onRequest(context) {
   const { next, request, env } = context;
   const url = new URL(request.url);
 
-  // CRITICAL: Explicitly exclude /api/generate from ALL authentication requirements
+  // CRITICAL: Explicitly exclude public API endpoints from ALL authentication requirements
   // This must be checked BEFORE any other logic to prevent authentication prompts
-  if (url.pathname === '/api/generate') {
+  if (url.pathname === '/api/generate' || url.pathname === '/api/recipes/hit') {
     // Add debug header to confirm this path is being handled correctly
     const response = await next();
-    response.headers.set('X-Auth-Bypass', 'generate-api');
+    response.headers.set('X-Auth-Bypass', url.pathname === '/api/generate' ? 'generate-api' : 'recipes-hit');
     return response;
   }
 
@@ -22,11 +22,22 @@ export async function onRequest(context) {
   const adminUser = env?.ADMIN_USER;
   const adminPass = env?.ADMIN_PASS;
   
+  // Only protect admin pages and recipe/category write endpoints with UUID ids
+  const uuidSegment = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}";
   const needsAdmin =
     url.pathname.startsWith('/admin') ||
-    ((url.pathname.startsWith('/api/categories/') || url.pathname === '/api/categories') && (request.method === 'PUT' || request.method === 'DELETE' || request.method === 'POST')) ||
-    (url.pathname.match(/^\/api\/recipes\/[A-Za-z0-9-]+\/categories$/) && request.method !== 'GET') ||
-    (url.pathname.match(/^\/api\/recipes\/[A-Za-z0-9-]+$/) && request.method !== 'GET');
+    (
+      (url.pathname.startsWith('/api/categories/') || url.pathname === '/api/categories') &&
+      (request.method === 'PUT' || request.method === 'DELETE' || request.method === 'POST')
+    ) ||
+    (
+      url.pathname.match(new RegExp(`^/api/recipes/${uuidSegment}/categories$`)) &&
+      request.method !== 'GET'
+    ) ||
+    (
+      url.pathname.match(new RegExp(`^/api/recipes/${uuidSegment}$`)) &&
+      request.method !== 'GET'
+    );
 
   if (needsAdmin) {
     // If admin credentials are configured, enforce Basic Auth
